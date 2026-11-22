@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f0ebdf">
-  <meta name="description" content="沿节气尺观察一座农家小院的四时农事。">
+  <meta name="theme-color" content="#192b2c">
+  <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
   <link rel="stylesheet" href="style.css?v=3">
 </head>
@@ -13,7 +13,6 @@
     <aside class="side-panel" aria-label="节气导览">
       <header class="mast">
         <h1 id="work-title">一院知时</h1>
-        <p>农家小院的四时农事</p>
       </header>
       <nav class="calendar" aria-labelledby="ruler-heading">
         <div class="ruler-heading">
@@ -51,38 +50,26 @@
           </div>
         </div>
         <div class="yard-links" role="group" aria-label="四个小院场景">
-          <span aria-hidden="true">入院</span>
-          <button type="button" data-yard="rain">雨水</button>
-          <button type="button" data-yard="grain" aria-current="true">芒种</button>
-          <button type="button" data-yard="dew">寒露</button>
-          <button type="button" data-yard="winter">小雪</button>
+          <button type="button" data-yard="rain">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-1.4 3.2-6 7.5-6 11.3a6 6 0 0 0 12 0C18 10.5 13.4 6.2 12 3Zm-3 11a3 3 0 0 0 3 3"/></svg>
+            <span>雨水</span>
+          </button>
+          <button type="button" data-yard="grain" aria-current="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V7m0 9c-5 0-7-3-7-7 4 0 7 2 7 7Zm0-4c0-4 2.9-6.8 7-7 0 4-2.6 7-7 7Zm0-5-2-4m-4 18h12"/></svg>
+            <span>芒种</span>
+          </button>
+          <button type="button" data-yard="dew">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4c-8.2-.3-13.4 2.8-13.4 8a5.1 5.1 0 0 0 5.2 5.3c5.2 0 8.5-5.7 8.2-13.3ZM4 20 15 9m-7.2 7.2-.9-4.3m5.1 0 4.4.2"/></svg>
+            <span>寒露</span>
+          </button>
+          <button type="button" data-yard="winter">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19m-8.2-14.2 16.4 9.4M3.8 16.7l16.4-9.4M9 4l3 3 3-3M9 20l3-3 3 3"/></svg>
+            <span>小雪</span>
+          </button>
         </div>
       </nav>
       <div class="season-note" aria-live="polite" aria-atomic="true">
-        <p id="term-note">芒种忙栽秧。田里留一层浅水，透过水能看见泥底和刚栽下的稻秧。</p>
-      </div>
-      <div class="season-observations">
-        <section class="season-palette" aria-labelledby="palette-heading">
-          <h2 id="palette-heading">节气传统色</h2>
-          <ul class="swatches">
-            <li><i aria-hidden="true"></i><span></span></li>
-            <li><i aria-hidden="true"></i><span></span></li>
-            <li><i aria-hidden="true"></i><span></span></li>
-          </ul>
-        </section>
-        <figure class="sundial" id="sundial">
-          <figcaption>田头正午日影</figcaption>
-          <svg class="sun-diagram" viewBox="8 12 60 50" aria-hidden="true">
-            <path class="sq-arc" d="M12 33A14 14 0 0 1 26 19"/>
-            <circle class="sun" cx="26" cy="33" r="2.8"/>
-            <path class="sq-ground" d="M17 56H66"/>
-            <path class="sq-gnomon" d="M26 56V33"/>
-            <rect class="sq-shadow" x="26" y="54.4" height="3.2" rx="1" width="3"/>
-            <path class="sq-ref" d="M30.8 52V60M49 49.5V62M57.5 52V60"/>
-          </svg>
-          <span id="shadow-ratio"><b>0.14</b><span>× 竿高</span></span>
-          <span class="sundial-extremes">夏至 0.12 · 冬至 1.37</span>
-        </figure>
+        <p id="term-summary">碧水映天，新栽稻秧成行；竹匾晒新麦，蜻蜓点波。</p>
       </div>
     </aside>
     <section class="stage" aria-label="农家小院">
@@ -129,17 +116,99 @@
       </svg>
       <svg id="yard-shadow" aria-hidden="true"><polygon id="plinth-shadow"/></svg>
       <canvas id="yard-compatibility" aria-hidden="true" hidden></canvas>
+      <img id="farmer-atlas" alt="" hidden>
       <canvas id="yard" tabindex="0" aria-label="三维农家小院。拖动旋转，滚动缩放，右键拖动平移，键盘方向键旋转。"></canvas>
-      <footer class="stage-footer">
-        <div class="view-hint"><span class="mouse-hint">拖动旋转 · 滚轮缩放</span><span class="touch-hint">滑动画面旋转 · 双指缩放</span></div>
-        <div class="view-controls" aria-label="小院视角">
-          <button id="zoom-out" type="button" aria-label="缩小" title="缩小"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-          <button id="reset-view" type="button" aria-label="复位视角" title="复位视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v6h6M4.4 10.2a8 8 0 1 1 1 7.3"/></svg></button>
-          <button id="zoom-in" type="button" aria-label="放大" title="放大"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7v14"/></svg></button>
-        </div>
-      </footer>
+      <svg id="yard-hotspots" aria-hidden="true" hidden>
+        <polygon id="gnomon-outline-edge"/>
+        <polygon id="gnomon-outline"/>
+        <path id="gnomon-measure"/>
+      </svg>
+      <button id="gnomon-target" type="button" aria-label="观察立杆与正午日影" aria-controls="gnomon-inspect" aria-expanded="false" hidden></button>
       <p class="renderer-message" id="renderer-message" hidden>浏览器暂时无法显示三维场景。</p>
     </section>
+    <section id="gnomon-inspect" class="gnomon-inspect" aria-labelledby="gnomon-heading" hidden>
+      <header>
+        <h2 id="gnomon-heading">立杆测影</h2>
+        <button id="gnomon-return" type="button" aria-label="退出观察" title="退出观察">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <p class="gnomon-reading">
+        <span>正午影长</span><output id="gnomon-length"></output>
+        <span class="gnomon-altitude">正午仰角 <output id="gnomon-altitude"></output></span>
+      </p>
+      <p id="gnomon-note">同一地点，正午太阳越高，竿影越短。</p>
+    </section>
+    <p class="stage-hint" aria-hidden="true">拖拽旋转 · 右键平移 · 滚轮缩放 · 点击立杆测影</p>
+    <aside class="stage-tools" aria-label="浏览小院">
+      <div class="view-controls" aria-label="小院视角">
+        <button id="toggle-gnomon" type="button" aria-label="观察立杆测影" aria-pressed="false" title="立杆测影"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v13M4 18h16M9 18h9"/><circle cx="16.5" cy="7.5" r="2.2"/></svg></button>
+        <button id="zoom-in" type="button" aria-label="放大" title="放大"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7v14"/></svg></button>
+        <button id="reset-view" type="button" aria-label="复位视角" title="复位视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v6h6M4.4 10.2a8 8 0 1 1 1 7.3"/></svg></button>
+        <button id="zoom-out" type="button" aria-label="缩小" title="缩小"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+      </div>
+    </aside>
+    <aside class="hud-dock" aria-label="界面和节气小志">
+      <button id="hud-toggle" class="hud-toggle" type="button" aria-label="隐藏界面" aria-pressed="false" title="隐藏界面">
+        <svg viewBox="1.75 0 28 28" aria-hidden="true">
+          <path d="M2.6 14c2.7-4.15 6.9-6.7 11.4-6.7s8.7 2.55 11.4 6.7c-2.7 4.15-6.9 6.7-11.4 6.7S5.3 18.15 2.6 14Z"/>
+          <circle cx="14" cy="14" r="3"/>
+          <path class="hud-eye-slash" d="M5 23 23 5"/>
+        </svg>
+      </button>
+      <button id="open-guide" class="guide-toggle" type="button" aria-haspopup="dialog" aria-controls="season-guide">
+        <svg viewBox="3.45 0 80 80" aria-hidden="true">
+          <path class="journal-frame" d="M40 4 76 40 40 76 4 40Z M40 9 71 40 40 71 9 40Z"/>
+          <path class="journal-book" d="M40 32c-5-4-12-6-21-5v26c8-1 16 1 21 5 5-4 13-6 21-5V27c-9-1-16 1-21 5Zm0 0v26m-21-27-4 1v25c10-2 19 1 25 5 6-4 15-7 25-5V32l-4-1"/>
+          <path class="journal-ink" d="m24 42 6-7 6 7m-11-1v6m9-6v6m-7-2h5m13 0c3-3 7-5 12-6m-12 10c4-2 8-4 12-4"/>
+          <circle class="journal-ink" cx="50" cy="34" r="2.5"/>
+        </svg>
+        <span>节气小志</span>
+      </button>
+    </aside>
+    <dialog id="season-guide" aria-labelledby="guide-term">
+      <header class="guide-header">
+        <div>
+          <p class="guide-kicker">节气小志 <span id="guide-meta"></span></p>
+          <h2 id="guide-term">芒种</h2>
+        </div>
+        <form method="dialog">
+          <button class="guide-close" type="submit" aria-label="关闭" title="关闭" autofocus><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </form>
+      </header>
+      <p id="guide-verse" class="guide-verse"></p>
+      <p id="term-note">「有芒之谷可稼种」。浅水稻田映出天光云影，农夫忙于抢墒插秧；檐下竹匾摊晒新麦，蜻蜓掠水，夏木葱茏。</p>
+      <dl class="phenology" aria-label="节气三候">
+        <div><dt>初候</dt><dd id="hou-1"></dd></div>
+        <div><dt>二候</dt><dd id="hou-2"></dd></div>
+        <div><dt>三候</dt><dd id="hou-3"></dd></div>
+      </dl>
+      <div class="season-observations">
+        <section class="season-palette" aria-labelledby="palette-heading">
+          <h3 id="palette-heading">节气传统色</h3>
+          <ul class="swatches">
+            <li><i aria-hidden="true"></i><span></span></li>
+            <li><i aria-hidden="true"></i><span></span></li>
+            <li><i aria-hidden="true"></i><span></span></li>
+          </ul>
+          <small id="palette-caption" class="palette-caption"></small>
+        </section>
+        <figure class="sundial" id="sundial">
+          <figcaption>田头正午日影</figcaption>
+          <svg class="sun-diagram" viewBox="8 12 60 50" aria-hidden="true">
+            <path class="sq-arc" d="M12 33A14 14 0 0 1 26 19"/>
+            <circle class="sun" cx="26" cy="33" r="2.8"/>
+            <path class="sq-ground" d="M17 56H66"/>
+            <path class="sq-gnomon" d="M26 56V33"/>
+            <rect class="sq-shadow" x="26" y="54.4" height="3.2" rx="1" width="3"/>
+            <path class="sq-ref" d="M30.8 52V60M49 49.5V62M57.5 52V60"/>
+          </svg>
+          <span id="shadow-ratio" aria-hidden="true"><b>0.14</b><span>× 竿高</span></span>
+          <span class="sundial-extremes">夏至 0.12 · 冬至 1.37</span>
+          <small id="shadow-latitude" class="shadow-latitude">北纬 30.4° 示意</small>
+        </figure>
+      </div>
+    </dialog>
     <div id="season-interlude" class="season-interlude" aria-hidden="true">
       <svg class="interlude-landscape" viewBox="0 0 1000 480" preserveAspectRatio="xMidYMax slice">
         <path d="M0 416c105-17 169-57 258-55 98 2 174 41 272 33 108-10 181-69 274-59 83 9 118 36 196 42v103H0Z" fill="currentColor"/>
@@ -166,9 +235,9 @@
       </div>
     </div>
   </main>
+  <script src="assets/farmer-data.js?v=3"></script>
   <script src="scene.js?v=3"></script>
   <script src="app.js?v=3"></script>
 </body>
 </html>
-
 
