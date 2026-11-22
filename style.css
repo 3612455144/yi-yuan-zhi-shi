@@ -696,4 +696,33 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
 }
 @media (prefers-reduced-motion: reduce) { .hou-pointer-ring { animation:none; opacity:.5; } }
 
+/* ---------- 时辰 ---------- */
+.time-strip {
+  position:absolute; left:50%; bottom:58px; transform:translateX(-50%);
+  display:flex; gap:2px; padding:3px; border-radius:999px;
+  background:#0e1a1ac2; border:1px solid var(--hud-line);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:3;
+}
+.time-strip button {
+  border:0; background:transparent; color:var(--hud-muted); cursor:pointer;
+  padding:5px 11px; border-radius:999px; font:500 12px/1 var(--body-font);
+  letter-spacing:.14em; transition:color .2s ease, background .2s ease;
+}
+.time-strip button:hover { color:#fff8eb; }
+.time-strip button[aria-current="true"] { background:#ffd98a24; color:var(--hud-gold); }
+.time-strip button:focus-visible { outline:2px solid var(--hud-gold); outline-offset:2px; }
+
+body[data-tone="dawn"]  .landscape, body[data-tone="dawn"]  #yard { filter:saturate(1.05) brightness(.95) hue-rotate(-4deg); }
+body[data-tone="dusk"]  .landscape, body[data-tone="dusk"]  #yard { filter:saturate(.92) brightness(.78) hue-rotate(-12deg) sepia(.12); }
+body[data-tone="night"] .landscape, body[data-tone="night"] #yard { filter:saturate(.55) brightness(.44) hue-rotate(10deg); }
+body[data-tone="night"] .landscape-sun { opacity:.16; }
+body[data-tone="dusk"]  .landscape-sun { opacity:.5; }
+body[data-tone="night"] .stage { --hud-line:#ffffff26; }
+
+.sound-wave { opacity:.25; transition:opacity .2s ease; }
+#sound-toggle[aria-pressed="true"] .sound-wave { opacity:1; }
+@media (max-width:720px) {
+  .time-strip { bottom:64px; }
+  .time-strip button { padding:4px 8px; font-size:11px; letter-spacing:.1em; }
+}
 
