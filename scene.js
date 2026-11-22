@@ -639,6 +639,15 @@
   }
 
   const sunHeading = [-.8,-.6];
+
+  // 一天里太阳的高度与影向：6 点日出、12 点最高、18 点日落
+  function sunState(hour) {
+    const t = Math.max(0, Math.min(1, (hour - 6) / 12));
+    const altitude = Math.sin(Math.PI * t) * 1.18;
+    const ratio = Math.min(3.2, 1 / Math.max(.30, Math.tan(altitude)));
+    const angle = Math.atan2(.60, .80) + (t - .5) * 1.7;
+    return { ratio, dir: [-Math.cos(angle), -Math.sin(angle)] };
+  }
   const shadeOpacity = {rain:.52,grain:.80,dew:.84,winter:.62};
   const hazeColor = {rain:"a4d4c6",grain:"b6e0cc",dew:"cfbda8",winter:"b8cee0"};
   // 立杆置于原先大树的位置；圭面必须沿日影方向 (0.8,0.6) 铺开，影子才会落在刻度上
@@ -1396,8 +1405,9 @@
     }
   }
 
-  function lightMap(world, shadowRatio, term) {
-    const shearX=sunHeading[0]*shadowRatio, shearZ=sunHeading[1]*shadowRatio;
+  function lightMap(world, shadowRatio, term, heading) {
+    const axis = heading || sunHeading;
+    const shearX=axis[0]*shadowRatio, shearZ=axis[1]*shadowRatio;
     const {size}=lightGrid;
     const pixels=new Uint8Array(size*size*4);
     rasterLight(world,pixels,0,shearX,shearZ);
@@ -1633,9 +1643,11 @@
       }
       this.pixels.set(this.worldPixels);
       this.depth.set(this.worldDepth);
-      if (farmer) this.draw(farmer.shadow.data,matrix,warmth,light,"farmer-shadow",farmer.texture);
-      this.draw(actor,matrix,warmth,light,water.length ? "actor" : "solid");
-      if (farmer) this.draw(farmer.sprite.data,matrix,warmth,light,"farmer",farmer.texture);
+      if (!this.indoor) {
+        if (farmer) this.draw(farmer.shadow.data,matrix,warmth,light,"farmer-shadow",farmer.texture);
+        this.draw(actor,matrix,warmth,light,water.length ? "actor" : "solid");
+        if (farmer) this.draw(farmer.sprite.data,matrix,warmth,light,"farmer",farmer.texture);
+      }
       this.context.putImageData(this.frame,0,0);
     }
 
@@ -2187,6 +2199,21 @@
         this.lastCameraTime = undefined;
       }
     }
+    // 时辰：重烘光影、点灯或熄灯、农夫回屋
+    setHour(hour) {
+      this.hour = hour;
+      const night = hour >= 17 || hour < 6;
+      const deepNight = hour < 5 || hour >= 23;
+      this.indoor = night;
+      this.lampScale = night ? (deepNight ? 0 : 2.6) : 1;
+      const sun = sunState(hour);
+      this.shadows = lightMap(this.landData, sun.ratio, this.term, sun.dir);
+      this.lampPower = new Float32Array(this.shadows.practicalPower);
+      this.uploadShadows();
+      this.render();
+      if (this.motion) this.queueFrame();
+    }
+
     // 只显示被选中的那一候的小品：其余顶点的位置挪到画外，切回来再写回原值
     setHou(index) {
       this.houIndex = index;
@@ -2240,7 +2267,8 @@
       this.houRanges = houRanges;
       this.houOriginal = houRanges.map(([a,b]) => new Float32Array(this.landData.subarray(a*9,b*9)));
       this.houIndex = -1;
-      this.shadows=lightMap(this.landData,shadowLength,term);
+      const sun=sunState(this.hour===undefined?12:this.hour);
+      this.shadows=lightMap(this.landData,sun.ratio,term,sun.dir);
       this.lampPower=new Float32Array(this.shadows.practicalPower);
       this.uploadShadows();
       this.act(0,0);
@@ -2262,8 +2290,9 @@
       mesh.data.length = 0;
       this.farmer = farmerPose(this.term,farmerTime);
       const basePower = this.shadows.practicalPower;
-      this.lampPower[0] = basePower[0] * (1 + .05 * Math.sin(time * 3.1));
-      this.lampPower[1] = basePower[1] * (1 + .05 * Math.sin(time * 2.7 + 1.4));
+      const glow = this.lampScale || 1;
+      this.lampPower[0] = basePower[0] * glow * (1 + .05 * Math.sin(time * 3.1));
+      this.lampPower[1] = basePower[1] * glow * (1 + .05 * Math.sin(time * 2.7 + 1.4));
       if (this.term==="dew") farmerLeafSweep(mesh,this.farmer,farmerTime);
       chickens(mesh,this.term,time);
       if (this.term === "rain") {
@@ -2501,8 +2530,8 @@
         gl.depthMask(true);
         gl.disable(gl.BLEND);
       }
-      this.draw(this.actor);
-      if (farmerReady) {
+      if (!this.indoor) this.draw(this.actor);
+      if (farmerReady && !this.indoor) {
         this.uploadGpuBuffer(this.farmerSprite,true);
         gl.enable(gl.BLEND);
         gl.uniform1f(this.farmerPass,1);
