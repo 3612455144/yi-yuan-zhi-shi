@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#192b2c">
   <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body data-season="grain">
   <main class="exhibit">
@@ -144,6 +144,13 @@
       </p>
       <p id="gnomon-note">同一地点，正午太阳越高，竿影越短。</p>
     </section>
+    <div class="time-strip" role="group" aria-label="时辰">
+      <button type="button" data-hour="6"  data-tone="dawn">卯时</button>
+      <button type="button" data-hour="12" data-tone="day" aria-current="true">午时</button>
+      <button type="button" data-hour="16" data-tone="day">申时</button>
+      <button type="button" data-hour="18" data-tone="dusk">酉时</button>
+      <button type="button" data-hour="0"  data-tone="night">子时</button>
+    </div>
     <p class="stage-hint" aria-hidden="true">拖拽旋转 · 右键平移 · 滚轮缩放 · 点击立杆测影</p>
     <aside class="stage-tools" aria-label="浏览小院">
       <div class="view-controls" aria-label="小院视角">
@@ -151,6 +158,7 @@
         <button id="zoom-in" type="button" aria-label="放大" title="放大"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7v14"/></svg></button>
         <button id="reset-view" type="button" aria-label="复位视角" title="复位视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v6h6M4.4 10.2a8 8 0 1 1 1 7.3"/></svg></button>
         <button id="zoom-out" type="button" aria-label="缩小" title="缩小"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+        <button id="sound-toggle" type="button" aria-label="环境音" aria-pressed="false" title="环境音"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h3l4-4v14l-4-4H5z"/><path class="sound-wave" d="M16 8.5a5 5 0 0 1 0 7"/></svg></button>
       </div>
     </aside>
     <aside class="hud-dock" aria-label="界面和节气小志">
@@ -240,11 +248,14 @@
       </div>
     </div>
   </main>
-  <script src="assets/farmer-data.js?v=12"></script>
-  <script src="scene.js?v=12"></script>
-  <script src="app.js?v=12"></script>
+  <script src="assets/farmer-data.js?v=13"></script>
+  <script src="scene.js?v=13"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
+
+
+
 
 
 
