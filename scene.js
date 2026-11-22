@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   "use strict";
 
   const subtract = (a, b) => a.map((value, i) => value - b[i]);
@@ -666,6 +666,84 @@
     mesh.box(x,base+.019,z,.19,.038,.19,"a89b81","88785d");
     mesh.beam([x,base+.038,z],[x,base+height,z],gnomon.radius*2,gnomon.radius*2,"80613f");
   }
+  // —— 三候小品：每院三件，对应初候/二候/三候。尺寸偏“绘本比例”，比真实略大以便看清 ——
+  const HOU_GROUND = .24;
+
+  function houBird(mesh, x, y, z, s, body, wing, dip) {
+    const d = dip ? -.05 * s : 0;
+    mesh.box(x, y, z, .16 * s, .09 * s, .26 * s, body, body);
+    mesh.box(x, y + .08 * s + d, z + .15 * s, .09 * s, .09 * s, .10 * s, body, body);
+    mesh.face([[x, y, z - .10 * s], [x - .34 * s, y + .06 * s, z + .04 * s], [x - .34 * s, y - .01 * s, z + .12 * s]], wing);
+    mesh.face([[x, y, z - .10 * s], [x + .34 * s, y - .01 * s, z + .12 * s], [x + .34 * s, y + .06 * s, z + .04 * s]], wing);
+    mesh.box(x, y - .01 * s, z - .18 * s, .05 * s, .04 * s, .16 * s, wing, wing);
+  }
+
+  function houProps(mesh, term) {
+    const g = HOU_GROUND;
+    if (term === "rain") {
+      // 初候 獭祭鱼：岸边一只水獭，旁边摆着一条鱼
+      mesh.beam([-2.34, g + .10, 8.86], [-2.02, g + .18, 8.98], .30, .24, "6b4a33");
+      mesh.box(-1.96, g + .20, 9.00, .21, .19, .21, "6b4a33", "5a3f2c");
+      mesh.beam([-2.02, g + .16, 8.96], [-2.42, g + .05, 9.10], .11, .09, "5a3f2c");
+      mesh.beam([-2.16, g + .03, 9.20], [-1.94, g + .05, 9.26], .13, .09, "b9c6c8");
+      mesh.face([[-2.22, g + .05, 9.18], [-2.10, g + .08, 9.23], [-2.13, g + .02, 9.30]], "8fa3a8");
+      // 二候 鸿雁来：天上两只雁
+      houBird(mesh, 2.40, 5.30, -3.40, 1.9, "ece8dc", "55534d", false);
+      houBird(mesh, 1.86, 5.02, -3.66, 1.5, "ece8dc", "55534d", false);
+      // 三候 草木萌动：田埂上冒出的新芽
+      for (let i = 0; i < 7; i++) {
+        const bx = -2.66 + i * .12, bz = 2.00 + (i % 3) * .12;
+        mesh.beam([bx, g + .01, bz], [bx + .03, g + .30 + (i % 2) * .09, bz + .02], .028, .028,
+          i % 2 ? "8cc46a" : "6aa84f");
+      }
+    } else if (term === "grain") {
+      // 初候 螳螂生：田埂上的螳螂（放大到绘本比例）
+      const mx = -2.10, mz = 6.10, my = g + .06;
+      mesh.beam([mx, my + .10, mz - .18], [mx, my + .20, mz + .28], .13, .11, "6d8c4a");
+      mesh.box(mx, my + .26, mz + .38, .15, .15, .16, "6d8c4a", "57713a");
+      mesh.beam([mx + .04, my + .10, mz + .22], [mx + .22, my + .34, mz + .34], .03, .03, "6d8c4c");
+      mesh.beam([mx - .04, my + .10, mz + .22], [mx - .22, my + .34, mz + .34], .03, .03, "6d8c4c");
+      for (let i = 0; i < 3; i++) {
+        const fz = mz - .06 + i * .13;
+        mesh.beam([mx, my + .10, fz], [mx - .20, my + .005, fz + .05], .022, .022, "6d8c4c");
+        mesh.beam([mx, my + .10, fz], [mx + .20, my + .005, fz + .05], .022, .022, "6d8c4c");
+      }
+      // 二候 鵙始鸣：树冠外沿的伯劳
+      houBird(mesh, 8.78, 4.30, -1.95, 1.8, "b3aa98", "4a453e", false);
+      // 三候 反舌无声：篱笆横杆上安静的一只
+      houBird(mesh, 1.70, g + 1.05, 15.06, 1.5, "988a76", "46423c", true);
+    } else if (term === "dew") {
+      // 初候 鸿雁来宾：一列三只
+      houBird(mesh, 4.00, 5.20, -3.40, 1.8, "ece8dc", "55534d", false);
+      houBird(mesh, 3.46, 4.96, -3.62, 1.5, "ece8dc", "55534d", false);
+      houBird(mesh, 4.54, 4.94, -3.60, 1.4, "ece8dc", "55534d", false);
+      // 二候 雀入大水为蛤：水边两枚蛤壳
+      for (const [cx, cz, s] of [[6.40, 12.30, 1], [6.66, 12.56, .8]]) {
+        mesh.revolved(cx, cz, [[g + .01, .16 * s], [g + .10, .20 * s], [g + .16, .10 * s]], ["ded8c8", "c8c0ad"], 9);
+      }
+      // 三候 菊有黄华：檐下那盆菊
+      chrysanthemum(mesh, .60, g, -.40, 1.6, 41);
+    } else {
+      // 初候 虹藏不见：天上将散的一缕虹
+      for (let i = 0; i < 6; i++) {
+        const a0 = .45 + i * .22, a1 = a0 + .24, r = 3.5;
+        const p = a => [Math.cos(a) * r, 5.5 + Math.sin(a) * r * .5, -3.2];
+        mesh.beam(p(a0), p(a1), .10, .10, i % 2 ? "c6d4de" : "d8e2e8");
+      }
+      // 二候 天气上升地气下降：屋脊上升起的两缕气
+      for (let i = 0; i < 3; i++) {
+        const sx = 3.70 + i * .34;
+        mesh.beam([sx, 3.60, -2.30], [sx + .08, 4.75 + i * .12, -2.30], .075, .075,
+          i % 2 ? "c9c2b2" : "b6ae9c");
+      }
+      // 三候 闭塞而成冬：合上的院门
+      mesh.box(2.00, g + .42, 14.90, 1.05, .84, .08, "7a5a3c", "6a4d32");
+      mesh.box(2.00, g + .42, 14.95, .08, .84, .04, "5e452d", "5e452d");
+      mesh.box(1.62, g + .42, 14.95, .05, .80, .05, "5e452d", "5e452d");
+      mesh.box(2.38, g + .42, 14.95, .05, .80, .05, "5e452d", "5e452d");
+    }
+  }
+
   function chrysanthemum(mesh, x, base, z, scale, seed) {
     for (let i=0;i<13;i++) {
       const angle=i*2.4, reach=(i===0 ? 0 : .18+variation(seed+i)*.42)*scale;
@@ -2054,7 +2132,7 @@
       bambooFence(mesh,2.83,6.52,15.20);
       for (const tree of yardTrees) growTree(mesh,tree,term);
       seasonalDetails(mesh,term);
-      if (term==="winter") fireBed(mesh);
+      houProps(mesh,term);
       this.landCount=mesh.data.length/9;
       if (term==="grain") {
         const {left,right,near,far}=plot, y=shallowWater.height;
@@ -2364,6 +2442,8 @@
   }
   window.YardScene = YardScene;
 })();
+
+
 
 
 
