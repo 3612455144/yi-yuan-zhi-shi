@@ -556,3 +556,71 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .today-jump { margin-top:4px; padding:3px 9px 3px 7px; font-size:11.5px; gap:6px; }
   .today-dot { width:4px; height:4px; }
 }
+
+/* ---------- 三候热点 ---------- */
+.hou-spots { position:absolute; inset:0 0 50px; pointer-events:none; z-index:4; }
+.hou-spot {
+  position:absolute; left:0; top:0; width:30px; height:30px; margin:-15px 0 0 -15px;
+  border:0; padding:0; background:transparent; pointer-events:auto; cursor:pointer;
+  display:grid; place-items:center; transform:translate3d(0,0,0);
+  will-change:transform; opacity:0; transition:opacity .35s ease;
+}
+.hou-spot.is-live { opacity:1; }
+.hou-dot {
+  width:8px; height:8px; border-radius:50%;
+  background:#ffd98a;
+  box-shadow:0 0 0 2px #12201fb3, 0 0 0 3px #ffd98a59, 0 0 12px #ffbf6780;
+  opacity:.72; transition:opacity .2s ease, transform .2s ease;
+  animation:hou-breathe 3.6s ease-in-out infinite;
+}
+@keyframes hou-breathe {
+  0%, 100% { box-shadow:0 0 0 2px #12201fb3, 0 0 0 3px #ffd98a30, 0 0 10px #ffbf6766; }
+  50%      { box-shadow:0 0 0 2px #12201fb3, 0 0 0 7px #ffd98a1f, 0 0 16px #ffbf6799; }
+}
+@media (prefers-reduced-motion: reduce) { .hou-dot { animation:none; } }
+.hou-spot:hover .hou-dot, .hou-spot:focus-visible .hou-dot, .hou-spot[aria-expanded="true"] .hou-dot {
+  opacity:1; transform:scale(1.35);
+}
+.hou-spot::after {
+  content:""; position:absolute; inset:0; border-radius:50%;
+  border:1px solid #ffd88b80; opacity:0; transform:scale(.6);
+  transition:opacity .25s ease, transform .25s ease;
+}
+.hou-spot:hover::after, .hou-spot:focus-visible::after, .hou-spot[aria-expanded="true"]::after {
+  opacity:1; transform:scale(1);
+}
+.hou-spot:focus-visible { outline:none; }
+.hou-label {
+  position:absolute; left:50%; top:24px; transform:translateX(-50%);
+  white-space:nowrap; font-size:11px; letter-spacing:.1em; color:#fff8e9;
+  text-shadow:0 1px 6px #0b1416cc; opacity:0; transition:opacity .2s ease; pointer-events:none;
+}
+.hou-spot:hover .hou-label, .hou-spot:focus-visible .hou-label { opacity:.9; }
+.hou-card {
+  position:absolute; z-index:6; width:min(258px, 62vw);
+  padding:14px 16px 15px; border-radius:10px;
+  background:#12201fd9; border:1px solid #ffdf9d40;
+  color:#f3efe2; backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
+  box-shadow:0 10px 34px #050d0f66; text-shadow:none;
+  transform:translate(-50%, calc(-100% - 18px));
+}
+.hou-card::after {
+  content:""; position:absolute; left:50%; bottom:-6px; width:11px; height:11px;
+  margin-left:-5.5px; background:#12201fd9; border-right:1px solid #ffdf9d40; border-bottom:1px solid #ffdf9d40;
+  transform:rotate(45deg);
+}
+.hou-kicker { margin:0; font-size:10.5px; letter-spacing:.22em; color:#ffdf9dcc; }
+.hou-card h3 { margin:8px 0 7px; font:500 19px/1.3 var(--display); letter-spacing:.06em; }
+.hou-text { margin:0; font-size:12.5px; line-height:1.75; letter-spacing:.03em; color:#e6e2d5d9; }
+.hou-close {
+  position:absolute; right:6px; top:6px; width:24px; height:24px; padding:0;
+  border:0; background:transparent; color:#ffdf9d99; cursor:pointer;
+}
+.hou-close svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; }
+.hou-close:hover { color:#ffdf9d; }
+@media (max-width:720px) {
+  .hou-card { width:min(232px, 76vw); padding:12px 13px; transform:translate(-50%, calc(-100% - 14px)); }
+  .hou-card h3 { font-size:17px; }
+  .hou-text { font-size:12px; line-height:1.65; }
+}
+
