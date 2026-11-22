@@ -1,4 +1,4 @@
-@font-face {
+﻿@font-face {
   font-family:"Yard WenKai";
   src:url("fonts/yard-wenkai.woff2") format("woff2");
   font-weight:500;
@@ -288,7 +288,11 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
   position:relative; isolation:isolate; min-height:100svh; overflow:hidden;
   background:var(--river);
 }
-.landscape { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.landscape {
+  position:absolute; inset:0; width:100%; height:100%; pointer-events:none;
+  transform:translate3d(var(--bg-x,0px),var(--bg-y,0px),0) scale(var(--bg-s,1.14));
+  transform-origin:50% 42%; will-change:transform;
+}
 #yard-shadow, #yard-hotspots { position:absolute; inset:0 0 50px; width:100%; height:calc(100% - 50px); pointer-events:none; overflow:visible; }
 #plinth-shadow { fill:var(--plinth-shadow); opacity:.29; filter:blur(8px); transform:translate(7px,9px); }
 .landscape-sun { opacity:.75; }
@@ -537,3 +541,5 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   *, *::before, *::after { transition:none !important; animation:none !important; }
   .season-interlude { display:none; }
 }
+
+
