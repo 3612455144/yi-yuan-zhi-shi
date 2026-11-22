@@ -117,7 +117,7 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
 .ruler-window {
   position:relative; width:100%; height:calc(9 * var(--ruler-step)); overflow:clip;
   pointer-events:auto; touch-action:pan-x pinch-zoom; user-select:none;
-  mask-image:linear-gradient(transparent,#000 13%,#000 87%,transparent);
+  mask-image:linear-gradient(transparent,#000 7%,#000 93%,transparent);
 }
 .terms {
   position:absolute; width:100%; top:calc(50% - var(--ruler-step) / 2);
@@ -646,8 +646,8 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
 /* 窄屏：尺子只显示“初候/二候/三候”，候名交给左侧文字，避免折行 */
 @media (max-width:720px), (max-height:680px) {
   .hou-mark { padding-left:40px; }
-  .hou-mark span { display:none; }
-  .hou-mark b { font-size:11px; }
+  .hou-mark span { font-size:10px; letter-spacing:.02em; }
+  .hou-mark b { font-size:10px; }
 }
 
 /* ---------- 点选某一候：标尺定位 + 场景指认 ---------- */
@@ -695,4 +695,5 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   box-shadow:0 4px 16px #050d0f66;
 }
 @media (prefers-reduced-motion: reduce) { .hou-pointer-ring { animation:none; opacity:.5; } }
+
 
