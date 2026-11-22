@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -72,14 +72,16 @@
         </section>
         <figure class="sundial" id="sundial">
           <figcaption>田头正午日影</figcaption>
-          <svg class="sun-diagram" viewBox="-15 10 95 55" aria-hidden="true">
-            <path d="M-12 62H79" class="dial-axis"/>
-            <rect x="32" y="60" height="2" class="shadow"/>
-            <path d="M32 62V38" class="gnomon"/>
-            <rect y="-.5" height="1" class="sun-ray"/>
-            <circle cx="4" cy="4" r="3.5" class="sun"/>
+          <svg class="sun-diagram" viewBox="8 12 60 50" aria-hidden="true">
+            <path class="sq-arc" d="M12 33A14 14 0 0 1 26 19"/>
+            <circle class="sun" cx="26" cy="33" r="2.8"/>
+            <path class="sq-ground" d="M17 56H66"/>
+            <path class="sq-gnomon" d="M26 56V33"/>
+            <rect class="sq-shadow" x="26" y="54.4" height="3.2" rx="1" width="3"/>
+            <path class="sq-ref" d="M30.8 52V60M49 49.5V62M57.5 52V60"/>
           </svg>
-          <span id="shadow-ratio" aria-hidden="true"></span>
+          <span id="shadow-ratio"><b>0.14</b><span>× 竿高</span></span>
+          <span class="sundial-extremes">夏至 0.12 · 冬至 1.37</span>
         </figure>
       </div>
     </aside>
@@ -168,3 +170,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
