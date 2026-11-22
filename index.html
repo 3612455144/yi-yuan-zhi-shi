@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#192b2c">
   <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body data-season="grain">
   <main class="exhibit">
@@ -129,6 +129,11 @@
         <path id="gnomon-measure"/>
       </svg>
       <button id="gnomon-target" type="button" aria-label="观察立杆与正午日影" aria-controls="gnomon-inspect" aria-expanded="false" hidden></button>
+      <div id="hou-pointer" class="hou-pointer" hidden aria-hidden="true">
+        <span class="hou-pointer-ring"></span>
+        <span class="hou-pointer-dot"></span>
+        <span class="hou-pointer-label"></span>
+      </div>
       <p class="renderer-message" id="renderer-message" hidden>浏览器暂时无法显示三维场景。</p>
     </section>
     <section id="gnomon-inspect" class="gnomon-inspect" aria-labelledby="gnomon-heading" hidden>
@@ -240,11 +245,12 @@
       </div>
     </div>
   </main>
-  <script src="assets/farmer-data.js?v=9"></script>
-  <script src="scene.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="assets/farmer-data.js?v=10"></script>
+  <script src="scene.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
+
 
 
 
