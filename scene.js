@@ -2262,7 +2262,6 @@
         this.cameraDirty=false;
       }
       const matrix=this.cameraMatrix;
-      if (changedView && this.onView) this.onView(this.yaw,this.pitch,this.zoom);
       if (this.onGnomonView && (changedView || this.gnomonGeometry!==this.landData)) {
         this.gnomonGeometry=this.landData;
         this.onGnomonView(this.gnomonProjection());
