@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#192b2c">
   <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body data-season="grain">
   <main class="exhibit">
@@ -127,6 +127,19 @@
         <polygon id="gnomon-outline"/>
         <path id="gnomon-measure"/>
       </svg>
+      <div id="hou-spots" class="hou-spots" role="group" aria-label="三候物候">
+        <button class="hou-spot" type="button" data-hou="0"><span class="hou-dot" aria-hidden="true"></span><span class="hou-label"></span></button>
+        <button class="hou-spot" type="button" data-hou="1"><span class="hou-dot" aria-hidden="true"></span><span class="hou-label"></span></button>
+        <button class="hou-spot" type="button" data-hou="2"><span class="hou-dot" aria-hidden="true"></span><span class="hou-label"></span></button>
+      </div>
+      <div id="hou-card" class="hou-card" role="dialog" aria-modal="false" aria-labelledby="hou-title" hidden>
+        <p class="hou-kicker"><span id="hou-order"></span> · <span id="hou-term"></span></p>
+        <h3 id="hou-title"></h3>
+        <p id="hou-text" class="hou-text"></p>
+        <button id="hou-close" class="hou-close" type="button" aria-label="关闭">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
       <button id="gnomon-target" type="button" aria-label="观察立杆与正午日影" aria-controls="gnomon-inspect" aria-expanded="false" hidden></button>
       <p class="renderer-message" id="renderer-message" hidden>浏览器暂时无法显示三维场景。</p>
     </section>
@@ -239,11 +252,12 @@
       </div>
     </div>
   </main>
-  <script src="assets/farmer-data.js?v=6"></script>
-  <script src="scene.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="assets/farmer-data.js?v=7"></script>
+  <script src="scene.js?v=7"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
+
 
 
 
