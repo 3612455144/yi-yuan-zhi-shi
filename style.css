@@ -649,3 +649,50 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .hou-mark span { display:none; }
   .hou-mark b { font-size:11px; }
 }
+
+/* ---------- 点选某一候：标尺定位 + 场景指认 ---------- */
+.hou-mark {
+  border:0; background:transparent; text-align:left; cursor:pointer; color:var(--hud-muted);
+  transition:color .2s ease;
+}
+.hou-mark:hover { color:#fff8eb; }
+.hou-mark:hover b { opacity:1; }
+.hou-mark.is-hou { color:#fff8eb; }
+.hou-mark.is-hou b { opacity:1; color:var(--hud-gold); }
+.hou-mark.is-hou span { color:#fff8eb; }
+.hou-lines li {
+  cursor:pointer; border-radius:6px; padding:3px 5px 3px 4px; margin-left:-4px;
+  transition:background .2s ease, color .2s ease;
+}
+.hou-lines li:hover { background:#ffffff10; }
+.hou-lines li.is-hou { background:#ffd98a1f; }
+.hou-lines li.is-hou span { color:#fffdf6; }
+.hou-lines li.is-hou b { color:#ffd98a; }
+
+.hou-pointer {
+  position:absolute; left:0; top:0; z-index:5; pointer-events:none;
+  transform:translate(-50%,-50%); display:grid; place-items:center;
+}
+.hou-pointer-ring {
+  position:absolute; width:46px; height:46px; border-radius:50%;
+  border:1px solid #ffd98a; opacity:.85;
+  animation:hou-ping 1.8s ease-out infinite;
+}
+@keyframes hou-ping {
+  0% { transform:scale(.55); opacity:.85; }
+  70% { transform:scale(1.15); opacity:0; }
+  100% { transform:scale(1.15); opacity:0; }
+}
+.hou-pointer-dot {
+  width:9px; height:9px; border-radius:50%; background:#ffd98a;
+  box-shadow:0 0 0 2px #10201fb3, 0 0 14px #ffbf6799;
+}
+.hou-pointer-label {
+  position:absolute; top:32px; white-space:nowrap;
+  padding:3px 9px; border-radius:999px;
+  background:#12201fd9; border:1px solid #ffdf9d40;
+  font-size:11.5px; letter-spacing:.1em; color:#fff8e9;
+  box-shadow:0 4px 16px #050d0f66;
+}
+@media (prefers-reduced-motion: reduce) { .hou-pointer-ring { animation:none; opacity:.5; } }
+
