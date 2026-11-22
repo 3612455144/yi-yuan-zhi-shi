@@ -952,7 +952,10 @@
   function viewMatrix(yaw,pitch,width,height,zoom,panX,panZ) {
     const forward=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)];
     const right=unit(cross([0,1,0],forward)), up=cross(forward,right);
-    const span=Math.max(homeView.verticalSpan,orbitDiameter*height/(width*1.86))/zoom;
+    // 竖屏（或窄窗口）画面横向变窄，需要整体后退才能装下整个院子。
+    const aspect=width/height;
+    const narrowFit=aspect<1.35 ? homeView.verticalSpan*(1.35/aspect)*.92 : 0;
+    const span=Math.max(homeView.verticalSpan,narrowFit,orbitDiameter*height/(width*1.86))/zoom;
     const sx=height/(span*width), sy=1/span;
     const [x,y,z]=homeView.pivot;
     const target=[x+panX,y,z+panZ];
