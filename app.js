@@ -178,23 +178,6 @@
     document.querySelector(".view-controls").hidden = true;
   }
 
-  // 背景（SVG 天空与远山）跟随相机做轻微视差，避免“院子在转、背景不动”的割裂感。
-  const backdrop = document.querySelector(".landscape");
-  const HOME_PITCH = 0.62;
-  const clampRange = (value, limit) => Math.max(-limit, Math.min(limit, value));
-  function syncBackdrop(yaw, pitch, zoom) {
-    if (!backdrop) return;
-    // yaw 会无限累加，先折回 [-PI, PI]，再把整圈映射到 ±68px
-    const wrapped = Math.atan2(Math.sin(yaw), Math.cos(yaw));
-    const x = clampRange(-wrapped * 22, 68);
-    const y = clampRange(-(pitch - HOME_PITCH) * 70, 62);
-    const scale = 1.14 * (1 + (zoom - 1) * 0.08);
-    backdrop.style.setProperty("--bg-x", x.toFixed(1) + "px");
-    backdrop.style.setProperty("--bg-y", y.toFixed(1) + "px");
-    backdrop.style.setProperty("--bg-s", scale.toFixed(3));
-  }
-  if (scene) scene.onView = syncBackdrop;
-
   function showTerm(key) {
     const term = terms[key];
     const declination = Math.asin(Math.sin(23.44 * degrees) * Math.sin(term.longitude * degrees));
