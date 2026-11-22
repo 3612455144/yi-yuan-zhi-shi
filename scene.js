@@ -18,21 +18,47 @@
     return rgb;
   }
   const around = (min, max, value) => Math.max(min, Math.min(max, value));
+  const campfire = {x:1.64,z:1.51,ground:.26};
+  const porchLanterns = [1.10,3.42];
+  const practicalLights = [
+    ...porchLanterns.map(x => [x,1.93,.51,2.20]),
+    [campfire.x,.78,campfire.z,3.85]
+  ];
+  const practicalTint = [1,.52,.18];
+  const lanternStrength = {rain:.92,grain:.48,dew:.90,winter:1.22};
   
   const seasonColors = {
-    rain: { ground: "9d9872", grass: "87aa62", second: "aec27c", tree: "8d9f6a", tile: "4f7072", path: "b6ab86", water: "a5c6b5", light: [1.015, 1.07, 1.01] },
-    grain: { ground: "b6a882", grass: "8b9e64", second: "acb67b", tree: "7e965a", tile: "687979", path: "c3b89f", water: "829b92", light: [1.035, 1.025, 0.97] },
-    dew: { ground: "aea290", grass: "8a895f", second: "a49a65", tree: "be8c48", tile: "4c6374", path: "b9aa9c", water: "928d79", light: [1.025, 1.01, 1.015] },
-    winter: { ground: "a99f91", grass: "9e9b72", second: "b3aa8b", tree: "8b806e", tile: "68777f", path: "bcb6a8", water: "a49a86", light: [0.99, 1.015, 1.055] }
+    rain: {
+      ground: "a8a777", grass: "76be54", second: "a6da66", tree: "68b350",
+      tile: "3c707c", path: "d0c5a2", water: "68b5c2",
+      light: [1.02, 1.07, 1.01], sunTint: [1.08, 1.06, .95], shadowTint: [.75, .90, .96]
+    },
+    grain: {
+      ground: "beb184", grass: "4c9649", second: "76bb54", tree: "429046",
+      tile: "396675", path: "d8cca8", water: "52b8b5",
+      light: [1.05, 1.04, .96], sunTint: [1.10, 1.06, .92], shadowTint: [.72, .89, .96]
+    },
+    dew: {
+      ground: "c4ac7e", grass: "a99c4a", second: "cfa84a", tree: "d65a3c",
+      tile: "335474", path: "dcc69f", water: "6da0b0",
+      light: [1.08, 1.01, .92], sunTint: [1.18, 1.02, .84], shadowTint: [.72, .80, .98]
+    },
+    winter: {
+      ground: "b4bcc4", grass: "7e9478", second: "bacbd6", tree: "6e6865",
+      tile: "2f4a66", path: "ccd8e0", water: "769cb6",
+      light: [.92, .97, 1.08], sunTint: [1.04, 1.02, .98], shadowTint: [.68, .80, 1.04]
+    }
   };
 
   class Mesh {
     constructor() {
       this.data = [];
+      this.emissive = false;
     }
     face(vertices, pigment) {
       const normal = unit(cross(subtract(vertices[1], vertices[0]), subtract(vertices[2], vertices[0])));
-      const rgb = color(pigment);
+      // A negative pigment marks light-emitting faces in both renderers.
+      const rgb = this.emissive ? color(pigment).map(channel => -channel) : color(pigment);
       for (let i = 1; i < vertices.length - 1; i++) {
         for (const vertex of [vertices[0], vertices[i], vertices[i + 1]]) this.data.push(...vertex, ...normal, ...rgb);
       }
@@ -110,11 +136,14 @@
     { x:7.27, z:8.02, scale:.61, lean:1, kind:"willow" }
   ];
   const treeLeaves = {
-    rain: ["648e50","87aa62","a9c977","c0ce88"],
-    grain: ["476949","588451","729a57","96b46a"],
-    dew: ["7c795a","9b8061","b77462","c69777"]
+    rain: ["4da142","74c24f","a1dc64","c8eb7e"],
+    grain: ["2e7c42","44984e","67b858","99d468"],
+    dew: ["b83c2e","d95838","ee863a","f5ba4a"]
   };
-  const autumnLeaves = ["a36953","b77462","bf936d","93845e"];
+  const springBlossoms = ["ea716b","f59a8e","fbd0c6","89c960","f2857b"];
+  const autumnWillow = ["8da842","ccb23c","e8c646","f4df6e"];
+  const autumnLeaves = ["c94432","e36d3a","f2ab3c","d98434"];
+  const springPetals = ["f49288","fcc5bc","e66d68","f8b0a6"];
   // Coordinates are relative to the base of each tree.
   const branches = {
     willow: [
@@ -164,13 +193,17 @@
           const sweep = [tip[0]+.17,tip[1]-.55,tip[2]+.13];
           mesh.beam(at(tip),at(sweep),.017*scale,.017*scale,bark[1]);
         }
+        // Light snow dusting resting on upper bough forks.
+        mesh.canopy(...at([bend[0],bend[1]+.09,bend[2]]),.16*scale,"f0f7fb",.36);
+        mesh.canopy(...at([tip[0],tip[1]+.06,tip[2]]),.12*scale,"e4f0f7",.38);
         continue;
       }
 
       const willow = kind === "willow";
-      const spread = term === "rain" ? (willow ? .72 : .61) : term === "dew" && willow ? .88 : 1;
-      const colors = treeLeaves[term];
-      const palette = term === "dew" && willow ? ["627151","818660","a49a65","b1a379"] : colors;
+      const spread = term === "rain" ? (willow ? .78 : .76) : term === "dew" && willow ? .92 : 1.02;
+      const palette = term === "rain" && !willow ? springBlossoms
+        : term === "dew" && willow ? autumnWillow
+        : treeLeaves[term];
       for (let j=0;j<8;j++) {
         const angle = j*2.4 + i*.72;
         const radius = j===0 ? 0 : size*(.43+.27*variation(i*17+j));
@@ -249,7 +282,7 @@
     // Three bays share a single ridge. Both roof planes extend beyond the bearing walls.
     const xmin = -1.95, xmax = 6.55, rear = -4.13, front = -.57;
     const cx = (xmin + xmax) / 2, cz = (rear + front) / 2;
-    const walls = "eddbb8", beam = "654433", timber = "a0714f", footing = "9a8a72";
+    const walls = "f6eee0", beam = "5e3724", timber = "a15f38", footing = "988872";
     mesh.box(cx, .39, cz, 8.78, .30, 3.78, "bfb49c", footing);
     mesh.box(cx, 1.67, cz, 8.5, 2.28, 3.56, walls);
     mesh.box(cx,.645,front+.024,8.49,.22,.069,"aa9d81","968669");
@@ -279,30 +312,47 @@
     }
 
     const doorX = 2.27;
-    mesh.box(doorX, 1.39, front + .085, 1.68, 1.83, .13, "6b4934");
+    mesh.box(doorX, 1.39, front + .085, 1.68, 1.83, .13, "613b26");
     for (let i = 0; i < 8; i++) {
       const x = doorX - .73 + i * .207;
-      mesh.box(x, 1.39, front + .165, .196, 1.69, .066, i < 4 ? "a37a51" : "af855c");
+      mesh.box(x, 1.39, front + .165, .196, 1.69, .066, i < 4 ? "b37243" : "c2814f");
     }
     for (const y of [.56, 2.26]) mesh.box(doorX, y, front + .219, 1.81, .12, .16, timber, beam);
     for (const x of [doorX - .84,doorX + .84]) mesh.box(x, 1.40, front + .205,.11,1.83,.12,timber,beam);
     for (const x of [doorX-.17,doorX+.17]) {
-      mesh.box(x,1.35,front+.23,.087,.155,.045,"625346");
-      mesh.beam([x-.027,1.36,front+.27],[x+.028,1.31,front+.274],.024,.022,"b49362");
+      mesh.box(x,1.35,front+.23,.087,.155,.045,"574538");
+      mesh.beam([x-.027,1.36,front+.27],[x+.028,1.31,front+.274],.024,.022,"e6ba5e");
     }
-    mesh.box(doorX,2.40,front+.11,1.85,.16,.16,"7e573e");
-    for (let i=0;i<6;i++) mesh.box(doorX-.72+i*.288,2.40,front+.21,.039,.096,.026,"ad855d");
+    if (term === "rain" || term === "winter") {
+      // Traditional red paper couplet strips and 45-degree rotated door diamond bring warm seasonal accent.
+      for (const side of [-1,1]) {
+        mesh.box(doorX + side*.94, 1.44, front + .17, .12, 1.24, .016, "c93e32");
+      }
+      mesh.box(doorX, 2.38, front + .21, .92, .13, .016, "c93e32");
+      const dz = front + .216, dy = 1.70, r1 = .16, r2 = .072;
+      mesh.face([[doorX,dy+r1,dz],[doorX-r1,dy,dz],[doorX,dy-r1,dz],[doorX+r1,dy,dz]],"cf4032");
+      mesh.face([[doorX,dy+r2,dz+.006],[doorX-r2,dy,dz+.006],[doorX,dy-r2,dz+.006],[doorX+r2,dy,dz+.006]],"f4cd66");
+    }
+    mesh.box(doorX,2.40,front+.11,1.85,.16,.16,"7e5237");
+    for (let i=0;i<6;i++) mesh.box(doorX-.72+i*.288,2.40,front+.21,.039,.096,.026,"c49560");
+    const glowingWindow = term === "winter" || term === "rain";
+    const paneColors = term === "winter" ? ["ffc65e","ffe292"]
+      : term === "rain" ? ["f2be6b","fbd488"]
+      : term === "dew" ? ["f0c778","fae09e"]
+      : ["efe0bc","f8edd2"];
     for (const x of [-1.02, 4.24, 5.66]) {
       const width = x > 5 ? .68 : .97;
       mesh.box(x, 1.65, front + .067, width + .17, .86, .17, timber, beam);
-      mesh.box(x,1.66,front+.163,width,.68,.037,"40362f");
+      mesh.box(x,1.66,front+.163,width,.68,.037,"3e3129");
+      mesh.emissive = glowingWindow;
       for (const side of [-1,1]) {
         const pane = x + side*width*.13;
-        mesh.box(pane,1.67,front+.186,width*.21,.53,.015,side<0 ? "afa082" : "bdab85");
+        mesh.box(pane,1.67,front+.186,width*.21,.53,.015,side<0 ? paneColors[0] : paneColors[1]);
       }
-      for (let i = -1; i <= 1; i++) mesh.box(x + i * width / 4,1.66,front + .196,.065,.68,.051,"bb996e");
-      mesh.box(x, 1.66, front + .192, width, .055, .053, "bb996e");
-      mesh.box(x, 1.26, front + .18, width + .24,.10,.29,"a08462",beam);
+      mesh.emissive = false;
+      for (let i = -1; i <= 1; i++) mesh.box(x + i * width / 4,1.66,front + .196,.065,.68,.051,"c49864");
+      mesh.box(x, 1.66, front + .192, width, .055, .053, "c49864");
+      mesh.box(x, 1.26, front + .18, width + .24,.10,.29,"a57d55",beam);
     }
     mesh.box(xmax + .035, 1.6, -2.59, .12, .73, .88, beam);
     for (let i = 0; i < 5; i++) mesh.box(xmax + .105,1.6,-2.94 + i * .176,.045,.63,.155,"af8c65");
@@ -318,7 +368,13 @@
 
     const roofX = [-2.37,6.99];
     const profile = [[-4.62,2.62],[-4.07,2.93],[-3.41,3.34],[-2.35,4.23],[-1.26,3.31],[-.47,2.79],[.56,2.60]];
-    const tileTones = ["435861","4b6168","50676d","526772","5c7274"];
+    const tileSets = {
+      rain: ["316470","3c727c","457f86","386a78","4f8a8e"],
+      grain: ["325f70","3d6d7c","477985","396678","52858f"],
+      dew: ["2c4a6b","36577a","406386","325273","4a6e90"],
+      winter: ["273f5c","304b6a","395776","2c4664","436280"]
+    };
+    const tileTones = tileSets[term] || tileSets.grain;
     const roofHeight = z => {
       const i=profile.findIndex(([point]) => point>=z);
       if (i<1) return profile[i===0 ? 0 : profile.length-1][1];
@@ -329,8 +385,8 @@
     for (let i=0; i<profile.length-1; i++) {
       const [z0,y0]=profile[i], [z1,y1]=profile[i+1];
       mesh.face([[a,y0,z0],[a,y1,z1],[b,y1,z1],[b,y0,z0]],state.tile);
-      mesh.face([[b,y0-.14,z0],[b,y1-.14,z1],[a,y1-.14,z1],[a,y0-.14,z0]],"70563f");
-      for (const x of [a,b]) mesh.beam([x,y0-.052,z0],[x,y1-.052,z1],.119,.144,"4e605e");
+      mesh.face([[b,y0-.14,z0],[b,y1-.14,z1],[a,y1-.14,z1],[a,y0-.14,z0]],"734d34");
+      for (const x of [a,b]) mesh.beam([x,y0-.052,z0],[x,y1-.052,z1],.119,.144,state.tile);
     }
     for (let column=0; column<44; column++) {
       const x=a+.108+column*(b-a-.216)/43;
@@ -344,9 +400,9 @@
           const y0=roofHeight(z0), y1=roofHeight(z1);
           const snowLine = .48 + .20*Math.sin(column*.25+direction) + .10*Math.cos(column*.67);
           const covered = term === "winter" && (row+.45)/rows < snowLine;
-          const tone = covered ? "dfe9e9" : tileTones[Math.floor(variation(column*7+direction)*tileTones.length)];
-          const glaze = covered ? "eaf0ec" : row%5===3 && variation(column+row*3)>.63 ? "64777b" : state.tile;
-          const lip = covered ? ["b9ccd0","c1d2d4"] : ["4e5c5c","465658"];
+          const tone = covered ? "e8f2f8" : tileTones[Math.floor(variation(column*7+direction)*tileTones.length)];
+          const glaze = covered ? "f4f9fc" : row%5===3 && variation(column+row*3)>.63 ? tileTones[4] : state.tile;
+          const lip = covered ? ["bed4e3","cce0ec"] : ["364d59","2d424e"];
           const edges=[
             [[x-width,y0+.013,z0],[x-width,y1+.020,z1],[x,y1+.070,z1],[x,y0+.057,z0]],
             [[x,y0+.057,z0],[x,y1+.070,z1],[x+width,y1+.020,z1],[x+width,y0+.013,z0]]
@@ -358,30 +414,30 @@
         }
       }
     }
-    for (const [z,y] of [profile[0],profile.at(-1)]) mesh.beam([a,y-.084,z],[b,y-.084,z],.145,.12,"53615c");
-    mesh.beam([a-.025,4.285,cz],[b+.025,4.285,cz],.155,.174,"4a5d5f");
+    for (const [z,y] of [profile[0],profile.at(-1)]) mesh.beam([a,y-.084,z],[b,y-.084,z],.145,.12,"3a525e");
+    mesh.beam([a-.025,4.285,cz],[b+.025,4.285,cz],.155,.174,"324c5c");
     for (let section=0;section<12;section++) {
       const x0=a+section*(b-a)/12, x1=a+(section+1)*(b-a)/12;
-      const tone = term==="winter" ? "e4ece9" : section%3 ? "556970" : "617275";
+      const tone = term==="winter" ? "eff6fa" : section%3 ? tileTones[1] : tileTones[4];
       mesh.beam([x0+.023,4.37,cz],[x1-.023,4.37,cz],.14,.099,tone);
     }
     for (const x of [a+.11,b-.11]) {
-      mesh.beam([x-.075,4.28,cz],[x+.075,4.28,cz],.20,.218,"73847c");
+      mesh.beam([x-.075,4.28,cz],[x+.075,4.28,cz],.20,.218,"6c8486");
     }
     for (let i=0; i<23; i++) {
       const x=a+.23+i*.40;
-      mesh.beam([x,roofHeight(.24)-.17,.24],[x,roofHeight(.54)-.16,.54],.080,.078,"9a6e4b");
+      mesh.beam([x,roofHeight(.24)-.17,.24],[x,roofHeight(.54)-.16,.54],.080,.078,"a36840");
     }
 
-    mesh.revolved(5.40,.54,[[.24,.29],[.33,.37],[.72,.42],[.92,.36],[1.01,.34],[1.025,.28]],["805c45","9f795d","976c4e","725341"]);
+    mesh.revolved(5.40,.54,[[.24,.29],[.33,.37],[.72,.42],[.92,.36],[1.01,.34],[1.025,.28]],["9e5438","c4704a","b5603e","7d422c"]);
     mesh.revolved(5.40,.54,[[1.026,.27],[1.029,.265]],[state.water],16);
-    mesh.box(6.04,.40,.76,.59,.30,.25,"9c7b58","84654a");
-    mesh.beam([6.2,.39,.25],[6.07,1.26,-.41],.07,.07,"a2825a");
-    mesh.box(-1.13,.46,.45,.82,.11,.35,"ac8a62","85694d");
-    for (const x of [-1.42,-.84]) mesh.box(x,.34,.45,.12,.21,.23,"88664a");
-    mesh.revolved(4.53,.31,[[.24,.16],[.29,.21],[.64,.26],[.69,.25]],["92724f","b49160","977b53"],10);
-    for (const y of [.31,.54]) mesh.revolved(4.53,.31,[[y,.225],[y+.044,.228]],[ "745d44"],10);
-    mesh.revolved(6.26,.88,[[.24,.23],[.31,.27],[.37,.26],[.39,.21]],["a58858","bda270","95805e"],12);
+    mesh.box(6.04,.40,.76,.59,.30,.25,"ad7e50","8c613e");
+    mesh.beam([6.2,.39,.25],[6.07,1.26,-.41],.07,.07,"b08452");
+    mesh.box(-1.13,.46,.45,.82,.11,.35,"bd8e58","8f6642");
+    for (const x of [-1.42,-.84]) mesh.box(x,.34,.45,.12,.21,.23,"8c6240");
+    mesh.revolved(4.53,.31,[[.24,.16],[.29,.21],[.64,.26],[.69,.25]],["a07448","c4975c","a6804e"],10);
+    for (const y of [.31,.54]) mesh.revolved(4.53,.31,[[y,.225],[y+.044,.228]],[ "70543a"],10);
+    mesh.revolved(6.26,.88,[[.24,.23],[.31,.27],[.37,.26],[.39,.21]],["b58c52","d1ae6c","a28254"],12);
 
     // A small bamboo drying rack and a woven tray make the porch feel occupied.
     const trayX=.58, trayY=.85, trayZ=.28, trayR=.39;
@@ -390,21 +446,36 @@
       const angle=i*Math.PI/8;
       return at(trayR*Math.cos(angle),trayR*Math.sin(angle));
     });
-    mesh.face(rim,"b68a55");
-    for (let i=0;i<rim.length;i++) mesh.beam(rim[i],rim[(i+1)%rim.length],.031,.025,"8f623e");
+    mesh.face(rim,term==="grain" ? "efc556" : "c49254");
+    for (let i=0;i<rim.length;i++) mesh.beam(rim[i],rim[(i+1)%rim.length],.031,.025,"946038");
     for (let i=-4;i<=4;i++) {
       const y=i*.075, x=Math.sqrt(trayR*trayR-y*y)-.022;
       const left=at(-x,y), right=at(x,y);
-      mesh.beam([left[0],left[1],left[2]+.019],[right[0],right[1],right[2]+.019],.013,.012,i%2 ? "c7a16d" : "92704a");
+      const weave = term==="grain" ? (i%2 ? "f7d772" : "dfb040") : (i%2 ? "d4a96a" : "9e7448");
+      mesh.beam([left[0],left[1],left[2]+.019],[right[0],right[1],right[2]+.019],.013,.012,weave);
+    }
+    if (term==="dew") {
+      // Bright orange-red persimmons drying on the porch tray.
+      for (let i=0;i<7;i++) {
+        const angle=i*2.4, r=i===0 ? 0 : .17;
+        const p=at(Math.cos(angle)*r,Math.sin(angle)*r);
+        mesh.canopy(p[0],p[1],p[2]+.045,.058,i%2 ? "eb632e" : "f58638",.8);
+      }
     }
     for (const x of [3.61,4.21]) {
-      mesh.beam([x,.24,.46],[x,.72,.33],.045,.045,"8c6a42");
-      mesh.beam([x,.24,.21],[x,.72,.33],.039,.039,"a57f4e");
+      mesh.beam([x,.24,.46],[x,.72,.33],.045,.045,"946b3e");
+      mesh.beam([x,.24,.21],[x,.72,.33],.039,.039,"b3854c");
     }
-    for (let i=0;i<5;i++) mesh.beam([3.55,.72,.25+i*.032],[4.27,.72,.25+i*.032],.027,.022,"aa8350");
-    for (const x of [1.10,3.42]) {
-      mesh.beam([x,2.53,.19],[x,2.01,.26],.017,.020,"7b5339");
-      mesh.revolved(x,.26,[[1.82,.035],[1.85,.088],[1.94,.092],[2.04,.052]],["894e38","ad6949","89513c"],8);
+    for (let i=0;i<5;i++) mesh.beam([3.55,.72,.25+i*.032],[4.27,.72,.25+i*.032],.027,.022,"ba8d50");
+    for (const x of porchLanterns) {
+      mesh.beam([x,2.53,.19],[x,2.05,.26],.017,.020,"75482e");
+      mesh.revolved(x,.26,[[2.036,.088],[2.069,.087],[2.08,.038]],["8c452d","bd6e3e"],10);
+      mesh.revolved(x,.26,[[1.775,.039],[1.80,.083],[1.818,.105]],["94422a","c45a36"],10);
+      mesh.emissive = true;
+      mesh.revolved(x,.26,[[1.816,.100],[1.854,.143],[1.906,.153],[1.969,.148],[2.036,.087]],
+        ["eb5e2e","ff973b","ffdb73","ffa845"],10);
+      mesh.emissive = false;
+      mesh.beam([x,1.78,.26],[x,1.70,.268],.026,.024,"cc3c30");
     }
   }
 
@@ -421,7 +492,7 @@
     const {left,right,near,far} = plot;
     const x = (left+right)/2, z = (near+far)/2, width = right-left, depth = far-near;
     const wet = term === "grain", tall = term === "dew";
-    const soil = {rain:"7f6853",grain:"918269",dew:"90816a",winter:"938278"}[term];
+    const soil = {rain:"785c45",grain:"8f7d60",dew:"967f5a",winter:"806e66"}[term];
     const soilHeight=wet ? .259 : .2745;
     mesh.box(x,(.24+soilHeight)/2,z,width,soilHeight-.24,depth,soil);
     if (term === "rain") {
@@ -431,7 +502,7 @@
           const reach = radius * (.88 + variation(i+10) * .23);
           return [px + Math.cos(angle) * reach,.281,pz + Math.sin(angle) * reach * .70];
         });
-        mesh.face(edge,"849c96");
+        mesh.face(edge,"65a4b0");
       }
     }
     for (const edge of [near,far]) {
@@ -473,14 +544,14 @@
         const dx=px-gnomon.x, dz=pz-gnomon.z;
         if (dx*.8+dz*.6>=-.35 && dx*.8+dz*.6<=1.95 && Math.abs(-dx*.6+dz*.8)<.40) continue;
         if ((wet && (i>12 && row<4)) || (tall && row===0 && Math.abs(pz-outletZ)<.43) || term==="rain") continue;
-        const seed=row*41+i, height=tall ? .69 : wet ? .35 : .12;
+        const seed=row*41+i, height=tall ? .70 : wet ? .37 : .12;
         const stemX=px+variation(seed)*.13-.065;
-        const tones=tall ? ["8f835b","aa996f","c3a67c"] : wet ? ["597742","72944e","94a958"] : ["ab8d62","bfa173","9b7e5b"];
+        const tones=tall ? ["c4932e","e0b640","f4d15a"] : wet ? ["348a36","50ad44","82d150"] : ["b39262","c9aa76","9c7f58"];
         for (let b=-2; b<=2; b++) {
           const length=height*(.72+variation(seed+b)*.32);
           blade(mesh,stemX+b*.026,pz+(b%2)*.077,length,b*height*.20,tones[(b+seed+8)%3]);
         }
-        if (tall && i%3!==1) mesh.beam([stemX,.70,pz],[stemX+.17,.92,pz+.05],.040,.032,"c5ad85");
+        if (tall && i%3!==1) mesh.beam([stemX,.71,pz],[stemX+.18,.94,pz+.05],.044,.036,"fae074");
         if (wet && (row+i)%3===0) {
           mesh.box(stemX+.24,.263,pz+.22,.28+variation(seed)*.26,.004,.028,"a99a7c");
         }
@@ -534,25 +605,43 @@
     }
     mesh.revolved(-.38,1.43,[[.26,.25],[.49,.24],[.51,.23]],["8b6545","b39069"],10);
 
+    if (term==="rain") {
+      // Scattered fallen apricot petals and tiny yellow spring blooms along the courtyard and bank.
+      for (let i=0; i<16; i++) {
+        const x=4.6+variation(i+31)*2.7, z=.55+variation(i+67)*2.6;
+        mesh.face([[x-.05,.268,z],[x+.06,.268,z-.06],[x+.09,.268,z+.05]],springPetals[i%4]);
+      }
+      for (let i=0; i<10; i++) {
+        const x=i%2 ? plot.left-.36+variation(i+81)*.22 : plot.right+.28+variation(i+93)*.22;
+        const z=plot.near+.8+i*1.12;
+        mesh.canopy(x,.41,z,.055,i%3 ? "f6d956" : "f4938a",.75);
+      }
+    }
     if (term==="dew") {
-      for (let i=0; i<14; i++) {
-        const x=3.7+variation(i+14)*1.52, z=1.42+variation(i+52)*.69;
-        mesh.face([[x-.06,.267,z],[x+.07,.267,z-.08],[x+.13,.267,z+.07]],i%2 ? "bd8350" : "a96f45");
+      for (let i=0; i<16; i++) {
+        const x=3.6+variation(i+14)*1.72, z=1.35+variation(i+52)*.82;
+        mesh.face([[x-.06,.267,z],[x+.07,.267,z-.08],[x+.13,.267,z+.07]],autumnLeaves[i%4]);
       }
     }
     if (term==="grain") {
       for (let i=0; i<14; i++) {
         const angle=i*2.40, x=-.92+Math.cos(angle)*.12, z=10.42+Math.sin(angle)*.13;
-        mesh.beam([x,.31,z],[x+Math.cos(angle)*.11,.77+(i%3)*.035,z+Math.sin(angle)*.13],.035,.026,i%2 ? "a2b868" : "6f944c");
+        mesh.beam([x,.31,z],[x+Math.cos(angle)*.11,.77+(i%3)*.035,z+Math.sin(angle)*.13],.035,.026,i%2 ? "84cf50" : "439e46");
       }
-      mesh.revolved(-.92,10.42,[[.40,.14],[.445,.14]],["b59655"],10);
+      mesh.revolved(-.92,10.42,[[.40,.14],[.445,.14]],["d1a854"],10);
+      // Early-summer pink-white water iris / lotus buds beside the side ditch.
+      for (const [bx,bz] of [[-2.30,2.45],[-2.44,2.85],[-2.26,3.20]]) {
+        mesh.beam([bx,.26,bz],[bx,.55,bz],.024,.024,"46944e");
+        mesh.canopy(bx,.59,bz,.078,"f58da0",1.15);
+        mesh.canopy(bx+.03,.63,bz-.02,.048,"fbd4dc",1.0);
+      }
     }
   }
 
   const sunHeading = [-.8,-.6];
-  const shadeOpacity = {rain:.55,grain:.82,dew:.86,winter:.64};
-  const hazeColor = {rain:"b6cdb5",grain:"c9d8b5",dew:"c0c5c7",winter:"c4d2df"};
-  const gnomon = {x:5.08,z:13.35,base:.323,height:1.16};
+  const shadeOpacity = {rain:.52,grain:.80,dew:.84,winter:.62};
+  const hazeColor = {rain:"a4d4c6",grain:"b6e0cc",dew:"cfbda8",winter:"b8cee0"};
+  const gnomon = {x:5.08,z:13.35,base:.323,height:1.16,radius:.053};
 
   function sundialStand(mesh) {
     const {x,z,base,height}=gnomon;
@@ -573,7 +662,7 @@
         i%4===0 ? "78674c" : "b3a07f");
     }
     mesh.box(x,base+.019,z,.19,.038,.19,"a89b81","88785d");
-    mesh.beam([x,base+.038,z],[x,base+height,z],.106,.106,"80613f");
+    mesh.beam([x,base+.038,z],[x,base+height,z],gnomon.radius*2,gnomon.radius*2,"80613f");
   }
 
   function chrysanthemum(mesh, x, base, z, scale, seed) {
@@ -589,7 +678,7 @@
           side>0 ? "6f8152" : "566b45");
       }
       const radius=(.12+variation(seed+i*11)*.048)*scale;
-      for (const [count,spread,lift,tone] of [[12,1,.037,"ebb94e"],[9,.72,.074,"ffdc66"]]) {
+      for (const [count,spread,lift,tone] of [[12,1,.037,"f7b628"],[9,.72,.074,"ffe458"]]) {
         for (let j=0;j<count;j++) {
           const theta=j*2*Math.PI/count+angle;
           const at=(distance,side,y)=>[stem[0]+Math.cos(theta)*distance-Math.sin(theta)*side,
@@ -599,59 +688,59 @@
             at(edge,0,lift),at(edge*.74,-edge*.15,lift*.53)],tone);
         }
       }
-      mesh.canopy(stem[0],stem[1]+.051*scale,stem[2],radius*.25,"c98a31",.62);
+      mesh.canopy(stem[0],stem[1]+.051*scale,stem[2],radius*.27,"e07622",.62);
     }
   }
 
   function seasonalDetails(mesh, term) {
     if (term === "rain") {
       // A shallow channel crosses the bank beside the willow.
-      mesh.box(-2.38,.245,3.44,.37,.015,2.57,"687b75");
+      mesh.box(-2.38,.245,3.44,.37,.015,2.57,"5baab8");
       for (const side of [-1,1]) {
-        mesh.box(-2.38+side*.25,.28,3.47,.14,.073,2.65,"857660");
+        mesh.box(-2.38+side*.25,.28,3.47,.14,.073,2.65,"7f694e");
       }
-      mesh.beam([-2.62,.322,2.7],[-2.12,.322,2.7],.12,.085,"b29a76");
+      mesh.beam([-2.62,.322,2.7],[-2.12,.322,2.7],.12,.085,"be9d70");
       return;
     }
     if (term === "grain") {
       const x=-2.27, z=10.60;
       mesh.revolved(x,z,[[.26,.34],[.33,.44],[.41,.46],[.45,.42]],
-        ["917451","ba985f","9b7447"],12);
+        ["a17b4e","cc9f5a","aa7b46"],12);
       for (let i=0;i<17;i++) {
         const angle=i*2.4, reach=.32*Math.sqrt(variation(i+42));
         blade(mesh,x+Math.cos(angle)*reach,z+Math.sin(angle)*reach,
-          .27+variation(i+19)*.23,(variation(i+51)-.5)*.25,i%2 ? "8ca855" : "5a8448");
+          .27+variation(i+19)*.23,(variation(i+51)-.5)*.25,i%2 ? "84cf50" : "3d9942");
       }
       return;
     }
     if (term === "dew") {
       // A break in the field bank connects the drained paddy to the side ditch.
-      mesh.box(plot.left-.11,.279,outletZ,.99,.012,.27,"6f6754");
-      mesh.box(plot.left-.62,.253,outletZ-.24,.29,.023,1.53,"706e5f");
+      mesh.box(plot.left-.11,.279,outletZ,.99,.012,.27,"68b0bf");
+      mesh.box(plot.left-.62,.253,outletZ-.24,.29,.023,1.53,"5a9eb0");
       for (const offset of [-.21,.21]) {
-        mesh.box(plot.left-.08,.40,outletZ+offset,.084,.30,.085,"8a6949");
+        mesh.box(plot.left-.08,.40,outletZ+offset,.084,.30,.085,"8a6342");
       }
-      mesh.box(plot.left-.08,.49,outletZ,.073,.11,.36,"ac8960");
+      mesh.box(plot.left-.08,.49,outletZ,.073,.11,.36,"b88b58");
       for (const [x,z,scale,seed] of [[-.02,1.68,.93,21],[1.10,1.67,1.05,34],[7.22,4.68,.79,76]]) {
         mesh.revolved(x,z,[[.245,.27*scale],[.30,.33*scale],[.58,.40*scale],[.61,.42*scale],[.63,.37*scale]],
-          ["9a5e45","b77b57","ca8b65","925637"],12);
-        mesh.revolved(x,z,[[.614,.37*scale],[.618,.37*scale]],["6b5741"],12);
+          ["b8593a","d4734c","e0875a","9e4b30"],12);
+        mesh.revolved(x,z,[[.614,.37*scale],[.618,.37*scale]],["6b523b"],12);
         chrysanthemum(mesh,x,.62,z,scale,seed);
       }
       for (const {x,z,lean} of yardTrees) {
-        for (let i=0;i<22;i++) {
-          const angle=i*2.4, spread=.28+variation(i+23)*1.16;
+        for (let i=0;i<24;i++) {
+          const angle=i*2.4, spread=.28+variation(i+23)*1.24;
           const px=around(footprint.left+.14,footprint.right-.14,x+lean*.32+Math.cos(angle)*spread*.71);
           const pz=z+Math.sin(angle)*spread;
-          leaf(mesh,px,.282+variation(i)*.014,pz,.073+variation(i+5)*.075,angle,.28,autumnLeaves[i%4]);
+          leaf(mesh,px,.282+variation(i)*.014,pz,.078+variation(i+5)*.078,angle,.28,autumnLeaves[i%4]);
         }
       }
       chrysanthemum(mesh,-2.36,.25,12.26,.94,91);
       chrysanthemum(mesh,-2.42,.25,13.41,.81,53);
       return;
     }
-    const mildGreen = ["5e7653","789063","819965","97a16b"];
-    mesh.box(-2.24,.268,10.29,.73,.058,4.29,"827864","726953");
+    const mildGreen = ["33824a","4ba058","66b866","86cc70"];
+    mesh.box(-2.24,.268,10.29,.73,.058,4.29,"7d6d5c","6b5c4c");
     for (let i=0;i<16;i++) {
       const x=-2.40+(i%2)*.34, z=8.54+Math.floor(i/2)*.50;
       for (let j=0;j<5;j++) {
@@ -659,15 +748,24 @@
         leaf(mesh,x+Math.cos(angle)*.10,.336,z+Math.sin(angle)*.10,.12,angle,.48,mildGreen[j%4]);
       }
     }
+    // Red-berried winter nandina / plum twigs beside the well and porch give a crisp winter accent.
+    for (const [bx,bz] of [[-2.15,5.65],[5.75,1.55]]) {
+      mesh.beam([bx,.26,bz],[bx+.06,.86,bz-.04],.03,.03,"5c4235");
+      mesh.beam([bx,.26,bz],[bx-.11,.74,bz+.09],.025,.025,"6e4e3e");
+      for (let k=0;k<7;k++) {
+        const a=k*2.4;
+        mesh.canopy(bx+Math.cos(a)*.12,.72+(k%3)*.09,bz+Math.sin(a)*.12,.048,k%2 ? "d93a32" : "ef5a4a",.95);
+      }
+    }
     for (let i=0;i<21;i++) {
       const x=i%2 ? plot.left-.43+variation(i+16)*.32 : plot.right+.72+variation(i+16)*.44;
       const z=plot.near+.31+variation(i+68)*(plot.far-plot.near-.49);
-      mesh.canopy(x,.271,z,.15+variation(i+77)*.27,"dbe7e5",.12);
+      mesh.canopy(x,.271,z,.15+variation(i+77)*.27,"edf5fa",.12);
     }
     for (let i=0;i<16;i++) {
       const x=plot.left+.02+variation(i+18)*(plot.right-plot.left-.05);
       const z=i%2 ? plot.far-.10 : plot.near+.09;
-      mesh.canopy(x,.370,z,.20+variation(i+44)*.29,"e4edeb",.12);
+      mesh.canopy(x,.370,z,.20+variation(i+44)*.29,"f4f9fc",.12);
     }
     for (const [x,z,spread] of [[-.60,4.1,.84],[3.95,4.45,.60],[1.76,7.0,.77],
       [5.1,8.6,.84],[-.68,9.2,.54],[3.2,10.8,.64],[.35,12.6,.89]]) {
@@ -678,14 +776,14 @@
           const theta=-j*Math.PI/5, reach=width*(.78+variation(i*13+j+z)*.35);
           return [cx+Math.cos(theta)*reach,.287+i*.001,cz+Math.sin(theta)*reach*.66];
         });
-        mesh.face(edge,i%3 ? "e3ebe8" : "cddbdc");
+        mesh.face(edge,i%3 ? "f3f8fc" : "dcecf5");
       }
     }
     mesh.revolved(.84,.97,[[.255,.23],[.33,.32],[.57,.30],[.62,.24]],
-      ["9e775b","a77a59","694f45"],10);
+      ["b5724e","c97e54","7a5340"],10);
     mesh.revolved(.84,.97,[[.62,.16],[.68,.235],[.80,.21],[.858,.16],[.86,.045]],
-      ["4a514f","626661","535957","4e4a42"],12);
-    mesh.canopy(.84,.884,.97,.045,"715348",.65);
+      ["3f4b52","576268","48545c","424442"],12);
+    mesh.canopy(.84,.884,.97,.045,"8c543e",.65);
   }
 
   function bambooFence(mesh, startX, endX, z) {
@@ -747,7 +845,7 @@
     mesh.beam([startX-.07,1.52,z],[endX+.07,1.52,z],.061,.062,"be9e63");
     if (term!=="rain") {
       for (const [x,width,length,shade,hem] of [
-        [6.31,.46,.57,"b27d60","dec49d"],[6.98,.51,.46,"708995","b6c7c2"]
+        [6.31,.46,.57,"cf5a42","f6dfb0"],[6.98,.51,.46,"3c6f94","c8e4ee"]
       ]) {
         for (let i=0;i<6;i++) {
           const left=x+(i/6-.5)*width, right=left+width/6;
@@ -785,6 +883,19 @@
     }
   }
 
+  function driftingPetals(mesh, time) {
+    const {x,z,kind,lean,scale} = yardTrees[1];
+    for (let i=0;i<12;i++) {
+      const phase=(time*(.16+variation(i+47)*.09)+variation(i+91))%1;
+      const tip=branches[kind][i%5][2];
+      const flutter=time*3.9+i*2.1;
+      const fallX=x+(tip[0]*lean*.76+Math.sin(flutter)*.30)*scale-phase*(3.2+variation(i)*1.7);
+      const fallZ=z+tip[2]*scale+phase*2.6+Math.cos(flutter)*.26;
+      const fallY=.32+(1-Math.pow(phase,1.45))*tip[1]*scale*.95;
+      leaf(mesh,fallX,fallY,fallZ,.088+variation(i+23)*.045,flutter*.6,flutter,springPetals[i%4]);
+    }
+  }
+
   function driftingLeaves(mesh, time) {
     for (const [treeIndex,tree] of yardTrees.entries()) {
       const {x,z,kind,lean,scale} = tree;
@@ -808,11 +919,11 @@
       const y=.72+Math.sin(turn*2)*.21+i*.17;
       const angle=Math.atan2(Math.cos(turn),-Math.sin(turn));
       const at=(a,b,c) => [x+a*Math.cos(angle)-c*Math.sin(angle),y+b,z+a*Math.sin(angle)+c*Math.cos(angle)];
-      mesh.beam(at(-.12,0,0),at(.13,0,0),.033,.035,i ? "546955" : "4e8181");
+      mesh.beam(at(-.12,0,0),at(.13,0,0),.034,.036,i ? "2c85b8" : "249e9c");
       const flap=Math.cos(time*51+i)*.095;
       for (const side of [-1,1]) {
-        mesh.face([at(.055,0,0),at(.123,flap,side*.174),at(.045,flap*.84,side*.205),at(.005,0,0)],"b5d4c7");
-        mesh.face([at(.015,0,0),at(-.02,flap*.72,side*.172),at(-.091,flap*.66,side*.149),at(-.028,0,0)],"ceddd0");
+        mesh.face([at(.055,0,0),at(.123,flap,side*.174),at(.045,flap*.84,side*.205),at(.005,0,0)],"d6f5ee");
+        mesh.face([at(.015,0,0),at(-.02,flap*.72,side*.172),at(-.091,flap*.66,side*.149),at(-.028,0,0)],"e6faf5");
       }
     }
   }
@@ -826,6 +937,65 @@
       const pigment=["c8ccc0","d4d8cd","dce1d8"][Math.min(2,Math.floor(phase*3))];
       mesh.canopy(x,y,z,w,pigment,.55);
     }
+  }
+
+  function fireBed(mesh) {
+    const {x,z,ground}=campfire;
+    mesh.revolved(x,z,[[ground+.013,.26],[ground+.034,.27]],["5b453a"],12);
+    for (let i=0;i<8;i++) {
+      const angle=i*Math.PI/4;
+      const rockX=x+Math.cos(angle)*.44, rockZ=z+Math.sin(angle)*.40;
+      stone(mesh,rockX,ground+.06,rockZ,.17+variation(i+4)*.08,.11,.21,
+        i%2 ? "92887b" : "a09a8b","685d52");
+    }
+    for (const [angle,level] of [[.52,.10],[2.1,.12],[-.26,.19]]) {
+      const dx=Math.cos(angle)*.29,dz=Math.sin(angle)*.29;
+      mesh.beam([x-dx,ground+level,z-dz],[x+dx,ground+level+.03,z+dz],.098,.10,"62422e");
+    }
+    mesh.emissive = true;
+    for (let i=0;i<8;i++) {
+      const angle=i*2.4;
+      mesh.canopy(x+Math.cos(angle)*.24,ground+.055,z+Math.sin(angle)*.20,
+        .026+variation(i+234)*.043,i%3 ? "d05b24" : "ffb34b",.58);
+    }
+    mesh.emissive = false;
+  }
+
+  const fireTongues = [
+    [-.14,.02,.20,.55,"f2521e"],[.15,-.06,.20,.53,"f55d24"],
+    [.00,-.08,.22,.78,"ff8c28"],[.02,.12,.16,.56,"ffd252"],
+    [-.045,.16,.095,.38,"fff6c4"]
+  ];
+
+  function fireFlames(mesh,time) {
+    const {x,z,ground}=campfire;
+    mesh.emissive = true;
+    for (const [index,[dx,dz,width,height,tone]] of fireTongues.entries()) {
+      const wave=time*(8.3+index*.71)+index*2.7;
+      const h=height*(.91+.15*Math.sin(wave)+.075*Math.sin(wave*1.9));
+      const base=ground+.13, fx=x+dx, fz=z+dz;
+      const tip=[fx+.10*Math.sin(wave+.9)+.045,base+h,fz+.048*Math.cos(wave)];
+      const ring=(angle,r,y)=>[fx+Math.cos(angle)*width*r,base+y*h,fz+Math.sin(angle)*width*.76*r];
+      for (let i=0;i<6;i++) {
+        const a=i*Math.PI/3,b=(i+1)*Math.PI/3;
+        const first=ring(a,1,.22), next=ring(b,1,.22);
+        mesh.face([ring(a,.58,0),first,next,ring(b,.58,0)],tone);
+        mesh.face([first,tip,next],index<2 ? tone : ["ff8a2f",tone,tone,"ffc454","ffe999","fff5ca"][i]);
+      }
+    }
+    for (let i=0;i<12;i++) {
+      const phase=(time*(.55+variation(i+138)*.47)+variation(i+62))%1;
+      const angle=i*2.4+phase*.8;
+      const reach=.11+phase*.27;
+      const sx=x+Math.cos(angle)*reach+phase*.23;
+      const sz=z+Math.sin(angle)*reach;
+      const sy=ground+.37+phase*1.42;
+      const size=(.024+variation(i+75)*.021)*(1-phase*.82);
+      mesh.face([[sx-size,sy,sz],[sx,sy+size*1.7,sz],[sx+size,sy,sz],[sx,sy-size*.72,sz]],
+        phase>.69 ? "ff7d34" : "ffe09a");
+      mesh.face([[sx,sy,sz-size],[sx,sy+size*1.7,sz],[sx,sy,sz+size],[sx,sy-size*.72,sz]],"ffac5d");
+    }
+    mesh.emissive = false;
   }
 
   function rainStreak(mesh, x, y, z, width, length, tone) {
@@ -883,60 +1053,77 @@
     }
   }
 
-  function farmer(mesh, term, time) {
-    const clothes = {rain:"5b7f8e",grain:"758d91",dew:"a1815b",winter:"7d7d86"}[term];
-    const group = {
-      rain: [-2.79,.24,4.14,1.49],
-      grain: [.65,.27,10.58,-.52],
-      dew: [4.05,.25,1.34,.45],
-      winter: [-1.10,.25,1.50,1.53]
+  const farmerSites = {
+    rain:   {row:0, position:[-2.47,.244,4.02], step:[.09,.69]},
+    grain:  {row:1, position:[.64,.261,10.58], step:[.43,.15]},
+    dew:    {row:2, position:[3.05,.245,1.91], step:[.65,.20]}
+  };
+  const farmerFrames = [0,0,1,1,2,2,3,0];
+  const farmerWork = 1.28;
+  const farmerMove = 3 * farmerWork;
+  const farmerLoop = farmerMove + .62;
+  const warmingFrames = [0,1,2,1];
+
+  function warmingPose(time) {
+    const rest=2.55, duration=3.42;
+    const direction=Math.floor(time/duration)%2===0 ? 1 : -1;
+    const phase=time%duration;
+    const step=around(0,1,(phase-rest-.13)/.59);
+    const progress=step*step*(3-2*step);
+    const arc=Math.sin(step*Math.PI);
+    const crouch=phase>=rest && (step===0 || step===1);
+    return {
+      row:3,frame:phase<rest ? warmingFrames[Math.floor(phase*8)%warmingFrames.length] : crouch ? 3 : 0,
+      x:campfire.x+direction*(2*progress-1)*1.22,
+      y:campfire.ground, z:campfire.z+.27+arc*.63,
+      lift:arc*.29,flip:false,
+      stretch:crouch ? .96 : 1+arc*.035
     };
-    const [x,y,z,angle] = group[term];
-    const wave = (1 - Math.cos(time * (term === "winter" ? 3.7 : 4.35))) / 2;
-    const lean = term === "grain" ? .34 + wave * .17 : .065 + wave * .09;
-    const f = (a,b,c) => [x + a*Math.cos(angle) + c*Math.sin(angle), y + b, z - a*Math.sin(angle) + c*Math.cos(angle)];
-    const piece = (a,b,w,d,c) => mesh.beam(f(...a),f(...b),w,d,c);
-    const trousers = "6c6354", skin = "ca9e6d", straw = "b89557";
-    for (const side of [-1,1]) {
-      const off = side * .13;
-      piece([off,.07,.09 + off *.31],[off,.39,0],.15,.15,trousers);
-      piece([off,.075,.02],[off,.075,.20],.14,.11,"514b40");
-    }
-    piece([0,.38,0],[0,.76 - lean * .19,lean],.32,.23,clothes);
-    const shoulderY = .69 - lean * .20;
-    const head = f(0,shoulderY + .23,lean + .105);
-    mesh.canopy(...head,.168,skin,1.08);
-    for (const x of [-.069,.069]) {
-      const eye=f(x,shoulderY+.219,lean+.252);
-      mesh.canopy(...eye,.022,"4b3b32",1.09);
-    }
-    mesh.canopy(...f(.001,shoulderY+.184,lean+.263),.032,skin,.87);
-    mesh.canopy(...f(0,shoulderY+.249,lean+.035),.153,"584333",.79);
-    piece([-.145,.48,lean*.48],[.15,.49,lean*.49],.07,.055,"82674d");
-    mesh.revolved(head[0],head[2],[[head[1]+.065,.26],[head[1]+.095,.26],[head[1]+.23,.105],[head[1]+.24,.038]],[straw,"d1af68","c0a060"],12);
-    const arm = term === "grain" ? [.16,.24 - wave * .12,lean+.32] : term === "winter"
-      ? [.18,.70 + wave * .42,.43 - wave * .15] : [.18,.40,lean + .34 + wave * .17];
-    piece([.16,shoulderY,lean],arm,.103,.093,clothes);
-    piece(arm,[arm[0],arm[1] - .08,arm[2] + .03],.075,.073,skin);
-    piece([-.16,shoulderY,lean],[-.15,.43,lean+.22],.103,.093,clothes);
-    piece([-.15,.43,lean+.22],[-.10,.43,lean+.31],.072,.072,skin);
-    if (term === "grain") {
-      piece([-.09,.38,lean+.31],[-.15,.55,lean+.31],.12,.11,"73904e");
-      piece([arm[0],arm[1] - .08,arm[2]+.02],[arm[0],Math.max(.02,arm[1] - .23),arm[2]+.11],.033,.034,"91ad58");
-    } else if (term === "winter") {
-      const headHeight = .32 + wave * 1.01, headZ = .72 - wave * .34;
-      piece([arm[0],arm[1] - .07,arm[2]],[.16,headHeight,headZ],.055,.055,"9a744d");
-      piece([.08,headHeight,headZ],[.23,headHeight,headZ],.13,.073,"5d686a");
-    } else {
-      const tip = [.25 + (wave-.5)*.44,.06,lean+.64+wave*.13];
-      piece([-.08,.46,lean+.15],tip,.045,.046,"96734d");
-      piece([tip[0]-.12,.07,tip[2]],[tip[0]+.11,.07,tip[2] + .03],.13,.033,term === "dew" ? "b69b65" : "666863");
-      if (term === "dew") {
-        for (let i = 0; i < 4; i++) {
-          const p = f(tip[0] + i * .083, .025 + wave * (.04 + .01*i),tip[2] + .09 * i);
-          mesh.face([p,[p[0]+.11,p[1],p[2]+.04],[p[0]+.054,p[1]+.025,p[2]+.099]],"b67b4b");
-        }
-      }
+  }
+
+  function farmerPose(term,time) {
+    if (term==="winter") return warmingPose(time);
+    const {row,position,step} = farmerSites[term];
+    const block = Math.floor(time / farmerLoop);
+    const phase = time % farmerLoop;
+    const moving = phase >= farmerMove;
+    const hop = around(0,1,(phase - farmerMove - .09) / .44);
+    const alternate = block % 2;
+    const progress = alternate ? 1 - hop : hop;
+    const lift = Math.sin(Math.PI * hop) * (term==="grain" ? .065 : .15);
+    const frame = moving ? (phase - farmerMove < .09 ? 1 : 0) :
+      farmerFrames[Math.floor((phase % farmerWork) / farmerWork * farmerFrames.length)];
+    const [x,y,z] = position;
+    const flip = term==="dew" && Boolean(hop >= 1 ? 1 - alternate : alternate);
+    const settle = moving ? (hop === 0 || hop === 1 ? .036 : 0) : 0;
+    return {x:x+step[0]*progress,y,z:z+step[1]*progress,row,frame,lift,flip,
+      stretch:1 - settle + Math.sin(time*3.8)*.013};
+  }
+
+  function writeFarmerQuad(data, pose, project, alpha=1) {
+    // The half-texel inset confines filtering to the current 128 px frame.
+    const edge = .5/512, tile = .25;
+    const left = pose.frame*tile+edge, right = (pose.frame+1)*tile-edge;
+    const top = pose.row*tile+edge, bottom = (pose.row+1)*tile-edge;
+    const nearU = pose.flip ? right : left, farU = pose.flip ? left : right;
+    const makeVertex = (x,y,u,v) => [...project(x,y),0,1,alpha,u,v,0];
+    const vertices = [
+      makeVertex(-60,114,nearU,top),makeVertex(68,114,farU,top),
+      makeVertex(68,-14,farU,bottom),makeVertex(-60,-14,nearU,bottom)
+    ];
+    for (const [index,corner] of [0,1,2,0,2,3].entries()) data.set(vertices[corner],index*9);
+  }
+
+  function farmerLeafSweep(mesh,pose,time) {
+    const pass = around(0,1,((time%farmerWork)/farmerWork-.42)/.58);
+    const spread = Math.sin(pass*Math.PI)*.32;
+    const side = pose.flip ? -1 : 1;
+    for (let i=0;i<5;i++) {
+      const reach = side*(.24 + i*.078 + spread);
+      const x = pose.x + reach*Math.cos(homeView.yaw);
+      const z = pose.z + .23 + i*.061 - reach*Math.sin(homeView.yaw);
+      const y = .254 + (.10+variation(i+155)*.26)*spread;
+      mesh.face([[x,y,z],[x+.084,y+.012,z+.013],[x+.032,y,z+.056]],autumnLeaves[i%4]);
     }
   }
 
@@ -948,8 +1135,23 @@
   const homeView = {yaw:-.53,pitch:.62,pivot:[2.44,1.11,4.98],verticalSpan:9.53};
   const orbitDiameter = 2*Math.max(...framingPoints.map(([x,,z]) =>
     Math.hypot(x-homeView.pivot[0],z-homeView.pivot[2])));
+  const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  const wrapAngle = angle => {
+    const turn = Math.PI * 2;
+    return (((angle + Math.PI) % turn) + turn) % turn - Math.PI;
+  };
+  const shortestAngleDelta = (current, target) => wrapAngle(target - current);
+  function stepSpring(current, target, velocity, omega, dt) {
+    const change = current - target;
+    const temp = (velocity + omega * change) * dt;
+    const decay = Math.exp(-omega * dt);
+    return [
+      target + (change + temp) * decay,
+      (velocity - omega * temp) * decay
+    ];
+  }
 
-  function viewMatrix(yaw,pitch,width,height,zoom,panX,panZ) {
+  function viewMatrix(yaw,pitch,width,height,zoom,panX,panZ,pivotY) {
     const forward=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)];
     const right=unit(cross([0,1,0],forward)), up=cross(forward,right);
     // 竖屏（或窄窗口）画面横向变窄，需要整体后退才能装下整个院子。
@@ -957,8 +1159,8 @@
     const narrowFit=aspect<1.35 ? homeView.verticalSpan*(1.35/aspect)*.92 : 0;
     const span=Math.max(homeView.verticalSpan,narrowFit,orbitDiameter*height/(width*1.86))/zoom;
     const sx=height/(span*width), sy=1/span;
-    const [x,y,z]=homeView.pivot;
-    const target=[x+panX,y,z+panZ];
+    const [x,,z]=homeView.pivot;
+    const target=[x+panX,pivotY,z+panZ];
     return new Float32Array([
       right[0]*sx,up[0]*sy,-forward[0]/45,0,
       right[1]*sx,up[1]*sy,-forward[1]/45,0,
@@ -967,6 +1169,45 @@
       -dot(up,target)*sy,
       dot(forward,target)/45,1
     ]);
+  }
+
+  function outlineHull(points) {
+    const sorted=points.slice().sort(([ax,ay],[bx,by])=>ax-bx || ay-by);
+    function rim(sequence) {
+      const chain=[];
+      for (const point of sequence) {
+        while (chain.length>=2) {
+          const [a,b]=chain.slice(-2);
+          if ((b[0]-a[0])*(point[1]-a[1])>(b[1]-a[1])*(point[0]-a[0])) break;
+          chain.pop();
+        }
+        chain.push(point);
+      }
+      return chain.slice(0,-1);
+    }
+    return [...rim(sorted),...rim(sorted.reverse())];
+  }
+
+  function poleOccluded(vertices,forward) {
+    const origin=[gnomon.x,gnomon.base+gnomon.height*.66,gnomon.z];
+    const [x,y,z]=origin;
+    for (let i=0;i<vertices.length;i+=27) {
+      // The camera stays above the yard. Only test geometry in front of the pole.
+      if (Math.max(vertices[i+1],vertices[i+10],vertices[i+19])<y) continue;
+      if (forward[0]*(vertices[i]-x)<0 && forward[0]*(vertices[i+9]-x)<0 && forward[0]*(vertices[i+18]-x)<0) continue;
+      if (forward[2]*(vertices[i+2]-z)<0 && forward[2]*(vertices[i+11]-z)<0 && forward[2]*(vertices[i+20]-z)<0) continue;
+      const a=[vertices[i],vertices[i+1],vertices[i+2]];
+      const e1=subtract([vertices[i+9],vertices[i+10],vertices[i+11]],a);
+      const e2=subtract([vertices[i+18],vertices[i+19],vertices[i+20]],a);
+      const p=cross(forward,e2), det=dot(e1,p);
+      if (Math.abs(det)<1e-7) continue;
+      const delta=[x-a[0],y-a[1],z-a[2]];
+      const u=dot(delta,p)/det;
+      if (u<0 || u>1) continue;
+      const q=cross(delta,e1), v=dot(forward,q)/det;
+      if (v>=0 && u+v<=1 && dot(e2,q)/det>.13) return true;
+    }
+    return false;
   }
 
   const lightGrid = {size:512,left:-7,back:-7,width:25,depth:32};
@@ -1023,8 +1264,26 @@
         pixels[p+1]=Math.max(pixels[p],near-4);
       }
     }
+    const lantern=lanternStrength[term];
+    const palette=seasonColors[term];
     return {pixels,shearX,shearZ,opacity:shadeOpacity[term],sun:unit([shearX,1,shearZ]),
-      haze:color(hazeColor[term])};
+      sunTint:palette.sunTint,shadowTint:palette.shadowTint,
+      haze:color(hazeColor[term]),practicalPower:[lantern,lantern*.88,term==="winter" ? 1.95 : 0]};
+  }
+
+  function practicalGlow(x,y,z,nx,ny,nz,power,farmer) {
+    let total=0;
+    for (let i=0;i<practicalLights.length;i++) {
+      if (!power[i]) continue;
+      const [lx,ly,lz,radius]=practicalLights[i];
+      const dx=lx-x,dy=ly-y,dz=lz-z;
+      const distance2=dx*dx+dy*dy+dz*dz;
+      const falloff=1-distance2/(radius*radius);
+      if (falloff<=0) continue;
+      const facing=farmer ? .68 : .26+.74*Math.max(0,(nx*dx+ny*dy+nz*dz)/Math.sqrt(Math.max(distance2,.015)));
+      total+=falloff*falloff*power[i]*facing;
+    }
+    return total;
   }
 
   function shaderProgram(gl, api) {
@@ -1050,10 +1309,16 @@
       ${modern ? "in" : "varying"} mediump float viewDepth;
       ${modern ? "out vec4 outputColor;" : ""}
       uniform vec3 warmth;
+      uniform vec3 sunTint;
+      uniform vec3 shadowTint;
       uniform vec3 hazeTint;
       uniform vec3 shadowInfo;
+      uniform vec3 practicalPower;
       uniform sampler2D shadowTexture;
+      uniform sampler2D farmerTexture;
+      uniform float farmerPass;
       uniform float waterPass;
+      uniform float waterTime;
       vec2 lightUV(vec2 point) {
         return (point-vec2(${lightGrid.left.toFixed(1)},${lightGrid.back.toFixed(1)}))/
           vec2(${lightGrid.width.toFixed(1)},${lightGrid.depth.toFixed(1)});
@@ -1062,12 +1327,48 @@
         float blocker=${readTexture}(shadowTexture,uv).r*(255.0/32.0)-1.0;
         return step(height,blocker);
       }
+      float lamp(vec3 point,vec3 n,vec3 center,float radius,float power,bool actor) {
+        if (power<=0.0) return 0.0;
+        vec3 delta=center-point;
+        float distance2=dot(delta,delta);
+        float falloff=1.0-distance2/(radius*radius);
+        if (falloff<=0.0) return 0.0;
+        float facing=actor ? .68 : .26+.74*max(0.0,dot(n,delta)*inversesqrt(max(distance2,.015)));
+        return falloff*falloff*power*facing;
+      }
+      vec3 lampTint(vec3 pigment,float glow) {
+        return (pigment*.56+.17)*vec3(1.0,.52,.18)*glow;
+      }
       void main() {
+        if (farmerPass<0.5 && tint.r<0.0) {
+          ${fragmentColor} = vec4(-tint,1.0);
+          return;
+        }
+        vec4 sprite = vec4(1.0);
+        if (farmerPass>0.5) {
+          sprite = ${readTexture}(farmerTexture,tint.xy);
+          if (farmerPass>1.5) {
+            vec2 stepUV = vec2(.0045,0);
+            float coverage = (2.0*sprite.a
+              + ${readTexture}(farmerTexture,tint.xy+stepUV).a
+              + ${readTexture}(farmerTexture,tint.xy-stepUV).a
+              + ${readTexture}(farmerTexture,tint.xy+stepUV.yx).a
+              + ${readTexture}(farmerTexture,tint.xy-stepUV.yx).a)/6.0;
+            if (coverage<0.025) discard;
+            ${fragmentColor} = vec4(.12,.18,.22,coverage*faceNormal.z);
+            return;
+          }
+          if (sprite.a<0.025) discard;
+        }
         vec3 n = normalize(faceNormal);
         vec3 sun = normalize(vec3(shadowInfo.x,1.0,shadowInfo.y));
         float diffuse = max(0.0,dot(n,sun));
         float sky = (n.y+1.0)*0.5;
         vec3 p = worldPosition;
+        bool actor=farmerPass>0.5;
+        float glow=${practicalLights.map(([x,y,z,radius],i)=>
+          `lamp(p,n,vec3(${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}),${radius.toFixed(3)},practicalPower.${"xyz"[i]},actor)`
+        ).join("+")};
         vec2 ray = lightUV(p.xz-shadowInfo.xy*p.y);
         float sampleStep=1.0/${lightGrid.size.toFixed(1)};
         float height=p.y+0.068;
@@ -1075,29 +1376,42 @@
         float shadowCoverage=(2.0*shadowAt(ray,height)+shadowAt(ray+tap,height)+shadowAt(ray-tap,height))*.25;
         float overhead=${readTexture}(shadowTexture,lightUV(p.xz)).b*(255.0/32.0)-1.0-p.y;
         float contact=smoothstep(.055,.19,overhead)*(1.0-.67*smoothstep(.18,1.65,overhead));
-        float bounce = max(0.0,dot(n,normalize(vec3(0.76,0.10,-0.67))))*0.075;
-        float brightness = (0.49+0.16*sky+bounce)*(1.0-.34*contact) +
-          (0.10+0.35*diffuse)*(1.0-shadowInfo.z*shadowCoverage);
+        if (farmerPass>0.5) {
+          vec3 ink = sprite.rgb*warmth*(.98-.26*shadowCoverage*shadowInfo.z-.11*contact)+lampTint(sprite.rgb,glow);
+          float mist = smoothstep(.12,.34,viewDepth)*.05;
+          ${fragmentColor} = vec4(mix(ink,hazeTint,mist),sprite.a);
+          return;
+        }
+        float bounce = max(0.0,dot(n,normalize(vec3(0.76,0.10,-0.67))))*0.095;
+        float shadeMix = shadowCoverage*shadowInfo.z;
+        vec3 ambientLight = mix(shadowTint,vec3(1.0),0.36+0.34*sky)*(0.47+0.16*sky+bounce)*(1.0-.32*contact);
+        vec3 directLight = sunTint*(0.11+0.42*diffuse)*(1.0-shadeMix);
         float grain = sin(p.x*44.0+sin(p.z*9.0))*sin(p.z*37.0+sin(p.y*13.0));
-        if (p.y<0.45) brightness *= 1.0+grain*0.013;
+        float textureMod = 1.0;
+        if (p.y<0.45) textureMod *= 1.0+grain*0.013;
         if (p.y>0.4 && p.y<2.7 && tint.r-tint.g>0.11) {
-          brightness *= 1.0+sin((p.x+p.z)*65.0+cos(p.y*6.0))*0.039;
+          textureMod *= 1.0+sin((p.x+p.z)*65.0+cos(p.y*6.0))*0.036;
         }
         vec3 paint = tint;
         if (waterPass>0.5) {
-          float wave = sin(p.z*15.0+cos(p.x*2.8)*0.85);
-          float ripple = smoothstep(0.91,0.99,wave)*(0.3+0.7*sin(p.x*3.8)*sin(p.x*3.8));
-          float pool = 0.37+0.23*sin(p.z*0.71)+0.09*sin(p.x*1.35+p.z*0.53);
+          float wave = sin(p.z*15.0+cos(p.x*2.8)*0.85+waterTime*2.0);
+          float ripple = smoothstep(0.89,0.99,wave)*(0.35+0.65*sin(p.x*3.8+waterTime*0.65)*sin(p.x*3.8));
+          float pool = 0.35+0.25*sin(p.z*0.71)+0.10*sin(p.x*1.35+p.z*0.53);
           float rim = max(max(0.0,abs(p.x-2.395)-3.43),max(0.0,abs(p.z-8.585)-5.37));
-          paint = mix(tint,vec3(0.46,0.65,0.62),pool);
-          paint = mix(paint,vec3(0.45,0.47,0.34),smoothstep(0.0,0.75,rim)*0.20);
-          float reflection = 0.70 + 0.30*sin(p.z*0.65+p.x*0.39);
-          paint = mix(paint,vec3(0.91,0.94,0.77),ripple*reflection*0.48*(1.0-shadowCoverage));
+          paint = mix(tint,vec3(0.28,0.74,0.73),pool);
+          paint = mix(paint,vec3(0.46,0.58,0.38),smoothstep(0.0,0.75,rim)*0.18);
+          float reflection = 0.72 + 0.28*sin(p.z*0.65+p.x*0.39);
+          paint = mix(paint,vec3(0.99,0.98,0.82),ripple*reflection*0.56*(1.0-shadowCoverage));
         }
-        vec3 lit = paint*warmth*brightness;
-        lit *= mix(vec3(1.0),vec3(.91,.97,1.035),shadowCoverage*shadowInfo.z);
-        if (tint.r>.93 && tint.g>.95 && tint.b>.963) lit = mix(lit,paint,.78);
-        float mist = smoothstep(.12,.34,viewDepth)*.055;
+        vec3 lit = paint*warmth*(ambientLight+directLight)*textureMod;
+        float luma = dot(lit,vec3(0.299,0.587,0.114));
+        lit = mix(vec3(luma),lit,1.11);
+        if (tint.r>.91 && tint.g>.94 && tint.b>.96) {
+          vec3 snowColor = paint*mix(vec3(1.02,1.02,1.01),vec3(0.79,0.89,1.04),shadeMix*0.75);
+          lit = mix(lit,snowColor,.76);
+        }
+        lit += lampTint(paint,glow);
+        float mist = smoothstep(.12,.34,viewDepth)*.05;
         ${fragmentColor} = vec4(mix(lit,hazeTint,mist),waterPass>0.5 ? ${shallowWater.opacity} : 1.0);
       }`;
     const program = gl.createProgram();
@@ -1124,6 +1438,15 @@
     return program;
   }
 
+  function blendFarmerPixel(behind,r,g,b,alpha) {
+    const transmitted=(behind>>>24)/255*(1-alpha);
+    const coverage=alpha+transmitted;
+    const mix=(channel,shift)=>Math.round(around(0,255,
+      (channel*alpha+((behind>>>shift)&255)*transmitted)/coverage
+    ));
+    return (Math.round(coverage*255)<<24)|(mix(b,16)<<16)|(mix(g,8)<<8)|mix(r,0);
+  }
+
   class CanvasYardRenderer {
     constructor(canvas) {
       this.canvas = canvas;
@@ -1131,7 +1454,7 @@
       if (!this.context) throw Error("Canvas 2D unavailable");
     }
 
-    render(matrix, cssWidth, cssHeight, world, actor, water, warmth, light) {
+    render(matrix, cssWidth, cssHeight, world, actor, water, warmth, light, farmer) {
       const scale = Math.min(1,Math.sqrt(920000/(cssWidth*cssHeight)));
       const width = Math.max(1,Math.round(cssWidth*scale));
       const height = Math.max(1,Math.round(cssHeight*scale));
@@ -1160,11 +1483,13 @@
       }
       this.pixels.set(this.worldPixels);
       this.depth.set(this.worldDepth);
+      if (farmer) this.draw(farmer.shadow.data,matrix,warmth,light,"farmer-shadow",farmer.texture);
       this.draw(actor,matrix,warmth,light,water.length ? "actor" : "solid");
+      if (farmer) this.draw(farmer.sprite.data,matrix,warmth,light,"farmer",farmer.texture);
       this.context.putImageData(this.frame,0,0);
     }
 
-    draw(vertices,m,warmth,light,layer="solid") {
+    draw(vertices,m,warmth,light,layer="solid",texture) {
       const {width,height} = this.canvas;
       const halfWidth = width/2, halfHeight = height/2;
       const [sunX,sunY,sunZ] = light.sun;
@@ -1195,13 +1520,17 @@
         const det=(bx-ax)*(cy-ay)-(cx-ax)*(by-ay);
         if (Math.abs(det)<.0001) continue;
 
-        const diffuse=Math.max(0,vertices[i+3]*sunX+vertices[i+4]*sunY+vertices[i+5]*sunZ);
+        const nx=vertices[i+3], ny=vertices[i+4], nz=vertices[i+5];
+        const diffuse=Math.max(0,nx*sunX+ny*sunY+nz*sunZ);
         const ambient=.49+.08*(vertices[i+4]+1);
         const direct=.10+.35*diffuse;
         const red=vertices[i+6]*warmth[0]*255;
         const green=vertices[i+7]*warmth[1]*255;
         const blue=vertices[i+8]*warmth[2]*255;
         const flake=vertices[i+6]>.93 && vertices[i+7]>.95 && vertices[i+8]>.963;
+        const emissive=vertices[i+6]<0 && !texture;
+        const emitted=(255<<24)|(Math.round(-vertices[i+8]*255)<<16)|
+          (Math.round(-vertices[i+7]*255)<<8)|Math.round(-vertices[i+6]*255);
 
         const du=(cy-ay)/det, dv=(ay-by)/det;
         for (let y=top;y<=bottom;y++) {
@@ -1212,6 +1541,23 @@
             if (u<0 || v<0 || u+v>1) continue;
             const z=az+u*(bz-az)+v*(cz-az);
             if (z>=depth[p]) continue;
+            if (emissive) {
+              depth[p]=z;
+              pixels[p]=emitted;
+              continue;
+            }
+            let texel;
+            if (texture) {
+              const tx=vertices[i+6]+u*(vertices[i+15]-vertices[i+6])+v*(vertices[i+24]-vertices[i+6]);
+              const ty=vertices[i+7]+u*(vertices[i+16]-vertices[i+7])+v*(vertices[i+25]-vertices[i+7]);
+              texel=(Math.floor(ty*texture.height)*texture.width+Math.floor(tx*texture.width))*4;
+              const alpha=texture.data[texel+3]/255;
+              if (alpha<.025) continue;
+              if (layer==="farmer-shadow") {
+                pixels[p]=blendFarmerPixel(pixels[p],33,43,43,alpha*vertices[i+5]);
+                continue;
+              }
+            }
             const worldX=x0+u*(x1-x0)+v*(x2-x0);
             const worldY=y0+u*(y1-y0)+v*(y2-y0);
             const worldZ=z0+u*(z1-z0)+v*(z2-z0);
@@ -1220,13 +1566,41 @@
             const overhead=readLight(lx,lz,2)-worldY;
             const contact=around(0,1,(overhead-.055)/.135)*(1-.67*around(0,1,(overhead-.18)/1.47));
             const cast=blocker>=worldY+.068 ? light.opacity : 0;
-            let shade=ambient*(1-.34*contact)+direct*(1-cast);
-            if (flake) shade=shade*.22+.78;
-            const mist=around(0,.055,(z-.12)*.25);
-            const fogScale=255*mist, clearShade=shade*(1-mist);
-            let r=Math.min(255,red*clearShade*(1-.09*cast)+light.haze[0]*fogScale);
-            let g=Math.min(255,green*clearShade*(1-.03*cast)+light.haze[1]*fogScale);
-            let b=Math.min(255,blue*clearShade*(1+.035*cast)+light.haze[2]*fogScale);
+            const glow=practicalGlow(worldX,worldY,worldZ,nx,ny,nz,light.practicalPower,Boolean(texture));
+            if (texture) {
+              const brightness=.97-.29*cast-.12*contact;
+              const mist=around(0,.055,(z-.12)*.25);
+              const surface=waterPixels[p], opacity=z>waterDepth[p] ? shallowWater.opacity : 0;
+              const tex=texture.data;
+              const channels=[0,1,2].map(i =>
+                ((tex[texel+i]*warmth[i]*brightness+(tex[texel+i]*.62+23)*practicalTint[i]*glow)*(1-mist)
+                  +light.haze[i]*255*mist)*(1-opacity) +
+                ((surface>>>(i*8))&255)*opacity
+              );
+              pixels[p]=blendFarmerPixel(pixels[p],...channels,tex[texel+3]/255);
+              depth[p]=z;
+              continue;
+            }
+            const amb=ambient*(1-.32*contact), dir=direct*(1-cast);
+            const mist=around(0,.05,(z-.12)*.25);
+            const fogScale=255*mist, clear=1-mist;
+            const lamp=glow*clear;
+            const ambMix=.36+.34*((ny+1)*.5);
+            const st=light.shadowTint, sn=light.sunTint;
+            let r=red*(amb*(st[0]+(1-st[0])*ambMix)+dir*sn[0]);
+            let g=green*(amb*(st[1]+(1-st[1])*ambMix)+dir*sn[1]);
+            let b=blue*(amb*(st[2]+(1-st[2])*ambMix)+dir*sn[2]);
+            const luma=r*.299+g*.587+b*.114;
+            r=luma+(r-luma)*1.11; g=luma+(g-luma)*1.11; b=luma+(b-luma)*1.11;
+            if (flake) {
+              const sf=cast*.75;
+              r=r*.24+vertices[i+6]*255*(1.02*(1-sf)+.79*sf)*.76;
+              g=g*.24+vertices[i+7]*255*(1.02*(1-sf)+.89*sf)*.76;
+              b=b*.24+vertices[i+8]*255*(1.01*(1-sf)+1.04*sf)*.76;
+            }
+            r=around(0,255,r*clear+light.haze[0]*fogScale+(vertices[i+6]*142.8+43)*practicalTint[0]*lamp);
+            g=around(0,255,g*clear+light.haze[1]*fogScale+(vertices[i+7]*142.8+43)*practicalTint[1]*lamp);
+            b=around(0,255,b*clear+light.haze[2]*fogScale+(vertices[i+8]*142.8+43)*practicalTint[2]*lamp);
             let coverage=1;
             if (layer==="water") {
               waterDepth[p]=z;
@@ -1253,13 +1627,17 @@
   }
 
   class YardScene {
-    constructor(canvas, compatibilityCanvas, plinthShadow) {
+    constructor(canvas, compatibilityCanvas, plinthShadow, farmerAtlas) {
       this.canvas = canvas;
       this.compatibilityCanvas = compatibilityCanvas;
       this.plinthShadow = plinthShadow;
       this.world = {handle:null,data:null};
       this.actor = {handle:null,data:null};
       this.actorMesh = new Mesh();
+      this.farmerAtlas = farmerAtlas;
+      this.farmerSprite = {handle:null,data:new Float32Array(54),count:6};
+      this.farmerShadow = {handle:null,data:new Float32Array(54),count:6};
+      farmerAtlas?.addEventListener("load",() => this.invalidateView(),{once:true});
       this.onFrame = time => this.loop(time);
       try {
         const options={antialias:true,alpha:true,powerPreference:"high-performance",failIfMajorPerformanceCaveat:true};
@@ -1304,9 +1682,14 @@
         this.motion = !motionPreference.matches;
         this.lastActorFrame = undefined;
         if (this.motion) this.queueFrame();
-        else delete this.canvas.dataset.frameRate;
+        else {
+          delete this.canvas.dataset.frameRate;
+          if (this.targetView) this.applyViewImmediate(this.targetView);
+          if (this.state) this.act(0,0);
+          this.invalidateView();
+        }
       });
-      this.reset();
+      this.reset(true);
       if (typeof ResizeObserver === "function") {
         const observer = new ResizeObserver(() => this.invalidateView());
         observer.observe(canvas);
@@ -1322,9 +1705,13 @@
       this.locations = ["position","normal","pigment"].map(name => gl.getAttribLocation(program,name));
       this.camera = gl.getUniformLocation(program,"camera");
       this.warmth = gl.getUniformLocation(program,"warmth");
+      this.sunTint = gl.getUniformLocation(program,"sunTint");
+      this.shadowTint = gl.getUniformLocation(program,"shadowTint");
+      this.practicalPower = gl.getUniformLocation(program,"practicalPower");
       this.shadowInfo = gl.getUniformLocation(program,"shadowInfo");
       this.hazeTint = gl.getUniformLocation(program,"hazeTint");
       this.waterPass = gl.getUniformLocation(program,"waterPass");
+      this.waterTime = gl.getUniformLocation(program,"waterTime");
       this.shadowTexture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,this.shadowTexture);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
@@ -1333,6 +1720,13 @@
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
       this.world.handle = gl.createBuffer();
       this.actor.handle = gl.createBuffer();
+      if (this.farmerAtlas) {
+        this.farmerPass = gl.getUniformLocation(program,"farmerPass");
+        this.farmerSampler = gl.getUniformLocation(program,"farmerTexture");
+        this.farmerSprite.handle = gl.createBuffer();
+        this.farmerShadow.handle = gl.createBuffer();
+        this.farmerTexture = null;
+      }
       gl.clearColor(0,0,0,0);
       gl.enable(gl.DEPTH_TEST);
       gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
@@ -1367,33 +1761,285 @@
       this.queueFrame();
     }
 
-    reset() {
-      this.yaw = homeView.yaw;
-      this.pitch = homeView.pitch;
-      this.zoom = 1;
-      this.panX = 0;
-      this.panZ = 0;
+    zeroCameraVelocity() {
+      this.cameraVelocity = {yaw:0,pitch:0,logZoom:0,panX:0,panZ:0,pivotY:0};
+      this.dragVelocity = {yaw:0,pitch:0,panX:0,panZ:0};
+    }
+    wakeCamera() {
+      if (!this.cameraActive) {
+        this.cameraActive = true;
+        this.lastCameraTime = undefined;
+      }
+      this.queueFrame();
+    }
+    applyViewImmediate(view) {
+      Object.assign(this,view);
+      this.yaw = wrapAngle(this.yaw);
+      this.targetView = this.currentView();
+      this.zeroCameraVelocity();
+      this.cameraMode = "idle";
+      this.cameraActive = false;
+      this.lastCameraTime = undefined;
       this.invalidateView();
+    }
+    reset(immediate = false) {
+      this.gnomonView = null;
+      const yaw = immediate || this.yaw === undefined
+        ? homeView.yaw
+        : this.yaw + shortestAngleDelta(this.yaw,homeView.yaw);
+      const target = {
+        yaw,
+        pitch:homeView.pitch,
+        zoom:1,
+        panX:0,
+        panZ:0,
+        pivotY:homeView.pivot[1]
+      };
+      if (immediate || !this.motion) this.applyViewImmediate(target);
+      else this.moveView(target);
+    }
+    currentView() {
+      const {yaw,pitch,zoom,panX,panZ,pivotY}=this;
+      return {yaw,pitch,zoom,panX,panZ,pivotY};
+    }
+    moveView(target) {
+      if (!this.motion) {
+        this.applyViewImmediate(target);
+        return;
+      }
+      this.targetView = {...target};
+      this.dragVelocity = {yaw:0,pitch:0,panX:0,panZ:0};
+      this.cameraMode = "glide";
+      this.wakeCamera();
+    }
+    focusGnomon() {
+      if (this.gnomonView) return;
+      const base = this.targetView || this.currentView();
+      this.gnomonView = {...base};
+      this.moveView({
+        yaw:this.yaw + shortestAngleDelta(this.yaw,base.yaw),
+        pitch:around(.49,.78,base.pitch),
+        zoom:5.25,
+        panX:gnomon.x-homeView.pivot[0],
+        panZ:gnomon.z-homeView.pivot[2],
+        pivotY:gnomon.base+gnomon.height*.43
+      });
+    }
+    releaseGnomon() {
+      if (!this.gnomonView) return;
+      const target = this.gnomonView;
+      this.gnomonView = null;
+      this.moveView({
+        ...target,
+        yaw:this.yaw + shortestAngleDelta(this.yaw,target.yaw)
+      });
+    }
+    beginInteraction(mode = "drag") {
+      this.dragVelocity = {yaw:0,pitch:0,panX:0,panZ:0};
+      this.dragMoved = false;
+      this.lastDragTime = nowMs();
+      if (!this.motion) return;
+      if (this.cameraMode === "coast" || (this.cameraMode === "glide" && !this.gnomonView)) {
+        this.targetView.yaw = this.yaw;
+        this.targetView.pitch = this.pitch;
+        this.cameraVelocity.yaw *= .25;
+        this.cameraVelocity.pitch *= .25;
+        if (!this.gnomonView) {
+          this.targetView.panX = this.panX;
+          this.targetView.panZ = this.panZ;
+          this.targetView.zoom = this.zoom;
+          this.cameraVelocity.panX *= .25;
+          this.cameraVelocity.panZ *= .25;
+          this.cameraVelocity.logZoom *= .25;
+        }
+      }
+      this.cameraMode = mode;
+    }
+    endInteraction(allowInertia = true) {
+      const wasDrag = this.cameraMode === "drag";
+      if (!this.motion) {
+        this.cameraMode = "idle";
+        return;
+      }
+      const idle = nowMs() - (this.lastDragTime || 0);
+      if (wasDrag && allowInertia && this.dragMoved && idle < 110) {
+        const freshness = Math.exp(-Math.max(0,idle - 16) / 34);
+        const speedScale = this.software ? 1.5 : 1;
+        const rotOmega = 6.2 * speedScale;
+        const panOmega = 7.2 * speedScale;
+        const pickSpeed = (springV, inputV, limit) => {
+          const speed = Math.abs(springV) >= Math.abs(inputV) * .6 ? springV : inputV;
+          return around(-limit,limit,speed * freshness);
+        };
+        const vy = pickSpeed(this.cameraVelocity.yaw,this.dragVelocity.yaw,5.5);
+        const vp = pickSpeed(this.cameraVelocity.pitch,this.dragVelocity.pitch,2.2);
+        const vpx = pickSpeed(this.cameraVelocity.panX,this.dragVelocity.panX,12);
+        const vpz = pickSpeed(this.cameraVelocity.panZ,this.dragVelocity.panZ,12);
+        let coasting = false;
+        const projectCoast = (axis, vel, omega, min, max) => {
+          if (Math.abs(vel) < .04) return;
+          const projected = this[axis] + vel / omega;
+          const existing = this.targetView[axis];
+          const further = vel > 0 ? Math.max(existing,projected) : Math.min(existing,projected);
+          const dest = min !== undefined ? around(min,max,further) : further;
+          this.targetView[axis] = dest;
+          const gap = dest - this[axis];
+          this.cameraVelocity[axis] = Math.sign(gap) === Math.sign(vel)
+            ? Math.sign(vel) * Math.min(Math.abs(vel),omega * Math.abs(gap))
+            : 0;
+          coasting = true;
+        };
+        projectCoast("yaw",vy,rotOmega);
+        projectCoast("pitch",vp,rotOmega,0,Math.PI/2-.01);
+        if (!this.gnomonView) {
+          projectCoast("panX",vpx,panOmega,-9,9);
+          projectCoast("panZ",vpz,panOmega,-9,9);
+        }
+        this.cameraMode = coasting ? "coast" : "idle";
+        if (coasting) this.wakeCamera();
+      } else {
+        this.cameraMode = this.gnomonView && this.cameraActive ? "glide" : "idle";
+      }
+      this.dragVelocity = {yaw:0,pitch:0,panX:0,panZ:0};
+      this.dragMoved = false;
     }
     rotate(dx, dy) {
-      this.yaw += dx;
-      this.pitch = around(0,Math.PI/2-.01,this.pitch + dy);
-      this.invalidateView();
+      if (!this.motion) {
+        this.yaw += dx;
+        this.pitch = around(0,Math.PI/2-.01,this.pitch + dy);
+        this.targetView.yaw = this.yaw;
+        this.targetView.pitch = this.pitch;
+        this.invalidateView();
+        return;
+      }
+      this.targetView.yaw += dx;
+      this.targetView.pitch = around(0,Math.PI/2-.01,this.targetView.pitch + dy);
+      if (this.cameraMode === "drag") {
+        const now = nowMs();
+        const dt = around(.008,.08,(now - (this.lastDragTime || now)) / 1000);
+        const blend = this.dragMoved ? 1 - Math.exp(-dt / .028) : 1;
+        this.dragVelocity.yaw += (dx / dt - this.dragVelocity.yaw) * blend;
+        this.dragVelocity.pitch += (dy / dt - this.dragVelocity.pitch) * blend;
+        this.dragVelocity.panX *= 1 - blend;
+        this.dragVelocity.panZ *= 1 - blend;
+        this.lastDragTime = now;
+        this.dragMoved = true;
+      } else if (this.cameraMode === "coast") {
+        this.cameraMode = "idle";
+      }
+      this.wakeCamera();
     }
     pan(dx, dy) {
+      if (this.gnomonView) return;
       const scale = this.worldUnitsPerPixel;
       if (!scale) return;
       const depth = -dy*scale/Math.max(.28,Math.sin(this.pitch));
-      this.panX = around(-9,9,this.panX - dx*scale*Math.cos(this.yaw) + depth*Math.sin(this.yaw));
-      this.panZ = around(-9,9,this.panZ + dx*scale*Math.sin(this.yaw) + depth*Math.cos(this.yaw));
-      this.invalidateView();
+      const stepX = -dx*scale*Math.cos(this.yaw) + depth*Math.sin(this.yaw);
+      const stepZ = dx*scale*Math.sin(this.yaw) + depth*Math.cos(this.yaw);
+      if (!this.motion) {
+        this.panX = around(-9,9,this.panX + stepX);
+        this.panZ = around(-9,9,this.panZ + stepZ);
+        this.targetView.panX = this.panX;
+        this.targetView.panZ = this.panZ;
+        this.invalidateView();
+        return;
+      }
+      this.targetView.panX = around(-9,9,this.targetView.panX + stepX);
+      this.targetView.panZ = around(-9,9,this.targetView.panZ + stepZ);
+      if (this.cameraMode === "drag") {
+        const now = nowMs();
+        const dt = around(.008,.08,(now - (this.lastDragTime || now)) / 1000);
+        const blend = this.dragMoved ? 1 - Math.exp(-dt / .028) : 1;
+        this.dragVelocity.panX += (stepX / dt - this.dragVelocity.panX) * blend;
+        this.dragVelocity.panZ += (stepZ / dt - this.dragVelocity.panZ) * blend;
+        this.dragVelocity.yaw *= 1 - blend;
+        this.dragVelocity.pitch *= 1 - blend;
+        this.lastDragTime = now;
+        this.dragMoved = true;
+      } else if (this.cameraMode === "coast") {
+        this.cameraMode = "idle";
+      }
+      this.wakeCamera();
     }
     magnify(factor) {
-      this.zoom = around(.72,1.9,this.zoom * factor);
-      this.invalidateView();
+      const minZoom = this.gnomonView ? 3.85 : .72;
+      const maxZoom = this.gnomonView ? 6.5 : 1.9;
+      if (!this.motion) {
+        this.zoom = around(minZoom,maxZoom,this.zoom * factor);
+        this.targetView.zoom = this.zoom;
+        this.invalidateView();
+        return;
+      }
+      this.targetView.zoom = around(minZoom,maxZoom,this.targetView.zoom * factor);
+      this.wakeCamera();
+    }
+    stepCamera(time) {
+      if (!this.cameraActive || !this.motion) return;
+      const dt = this.lastCameraTime === undefined
+        ? 1 / 60
+        : around(.001,.05,(time - this.lastCameraTime) / 1000);
+      this.lastCameraTime = time;
+
+      const mode = this.cameraMode;
+      const speedScale = this.software ? 1.5 : 1;
+      const rotOmega = (mode === "drag" || mode === "pinch" ? 36 : mode === "coast" ? 6.2 : mode === "glide" ? 9.5 : 15) * speedScale;
+      const panOmega = (mode === "drag" || mode === "pinch" ? 36 : mode === "coast" ? 7.2 : mode === "glide" ? 9.5 : 16) * speedScale;
+      const zoomOmega = (mode === "pinch" ? 34 : mode === "glide" ? 9.5 : 14) * speedScale;
+      const pivotOmega = 9.5 * speedScale;
+
+      const target = this.targetView;
+      const vel = this.cameraVelocity;
+
+      [this.yaw,vel.yaw] = stepSpring(this.yaw,target.yaw,vel.yaw,rotOmega,dt);
+      [this.pitch,vel.pitch] = stepSpring(this.pitch,target.pitch,vel.pitch,rotOmega,dt);
+      if (this.pitch < 0 || this.pitch > Math.PI/2-.01) {
+        this.pitch = around(0,Math.PI/2-.01,this.pitch);
+        vel.pitch = 0;
+      }
+
+      const [nextLogZoom,nextLogVel] = stepSpring(
+        Math.log(this.zoom),Math.log(target.zoom),vel.logZoom,zoomOmega,dt
+      );
+      this.zoom = around(.72,6.5,Math.exp(nextLogZoom));
+      vel.logZoom = (this.zoom === .72 || this.zoom === 6.5) ? 0 : nextLogVel;
+
+      [this.panX,vel.panX] = stepSpring(this.panX,target.panX,vel.panX,panOmega,dt);
+      [this.panZ,vel.panZ] = stepSpring(this.panZ,target.panZ,vel.panZ,panOmega,dt);
+      if (this.panX < -9 || this.panX > 9) { this.panX = around(-9,9,this.panX); vel.panX = 0; }
+      if (this.panZ < -9 || this.panZ > 9) { this.panZ = around(-9,9,this.panZ); vel.panZ = 0; }
+
+      [this.pivotY,vel.pivotY] = stepSpring(this.pivotY,target.pivotY,vel.pivotY,pivotOmega,dt);
+
+      this.cameraDirty = true;
+
+      const posEps = this.software ? 1.5e-3 : 1.5e-4;
+      const velEps = this.software ? 1.5e-2 : 1.5e-3;
+      const settled =
+        mode !== "drag" && mode !== "pinch" &&
+        Math.abs(this.yaw - target.yaw) < posEps && Math.abs(vel.yaw) < velEps &&
+        Math.abs(this.pitch - target.pitch) < posEps && Math.abs(vel.pitch) < velEps &&
+        Math.abs(Math.log(this.zoom / target.zoom)) < posEps && Math.abs(vel.logZoom) < velEps &&
+        Math.abs(this.panX - target.panX) < posEps && Math.abs(vel.panX) < velEps &&
+        Math.abs(this.panZ - target.panZ) < posEps && Math.abs(vel.panZ) < velEps &&
+        Math.abs(this.pivotY - target.pivotY) < posEps && Math.abs(vel.pivotY) < velEps;
+
+      if (settled) {
+        this.yaw = wrapAngle(target.yaw);
+        this.pitch = target.pitch;
+        this.zoom = target.zoom;
+        this.panX = target.panX;
+        this.panZ = target.panZ;
+        this.pivotY = target.pivotY;
+        this.targetView = this.currentView();
+        this.zeroCameraVelocity();
+        this.cameraMode = "idle";
+        this.cameraActive = false;
+        this.lastCameraTime = undefined;
+      }
     }
     useTerm(term, shadowLength) {
       this.term = term;
+      this.farmerStart = undefined;
       this.state = seasonColors[term];
       const mesh = new Mesh();
       platform(mesh,this.state);
@@ -1407,18 +2053,20 @@
       bambooFence(mesh,2.83,6.52,15.20);
       for (const tree of yardTrees) growTree(mesh,tree,term);
       seasonalDetails(mesh,term);
+      if (term==="winter") fireBed(mesh);
       this.landCount=mesh.data.length/9;
       if (term==="grain") {
         const {left,right,near,far}=plot, y=shallowWater.height;
         mesh.face([[left+.10,y,near+.10],[left+.10,y,far-.10],
-          [right-.10,y,far-.10],[right-.10,y,near+.10]],"79b4ad");
+          [right-.10,y,far-.10],[right-.10,y,near+.10]],"52b8b5");
       }
       this.upload(this.world,mesh,false);
       this.landData=this.world.data.subarray(0,this.landCount*9);
       this.waterData=this.world.data.subarray(this.landCount*9);
       this.shadows=lightMap(this.landData,shadowLength,term);
+      this.lampPower=new Float32Array(this.shadows.practicalPower);
       this.uploadShadows();
-      this.act(0);
+      this.act(0,0);
       this.render();
       if (this.motion) this.queueFrame();
     }
@@ -1431,32 +2079,38 @@
       gl.texImage2D(gl.TEXTURE_2D,0,format,lightGrid.size,lightGrid.size,0,gl.RGBA,
         gl.UNSIGNED_BYTE,this.shadows.pixels);
     }
-    act(time) {
+    act(time,farmerTime) {
+      this.sceneTime = time;
       const mesh = this.actorMesh;
       mesh.data.length = 0;
-      farmer(mesh,this.term,time);
+      this.farmer = farmerPose(this.term,farmerTime);
+      const basePower = this.shadows.practicalPower;
+      this.lampPower[0] = basePower[0] * (1 + .05 * Math.sin(time * 3.1));
+      this.lampPower[1] = basePower[1] * (1 + .05 * Math.sin(time * 2.7 + 1.4));
+      if (this.term==="dew") farmerLeafSweep(mesh,this.farmer,farmerTime);
       chickens(mesh,this.term,time);
       if (this.term === "rain") {
+        driftingPetals(mesh,time);
         for (let i = 0; i < 86; i++) {
           const phase=(time*(1.34+variation(i+18)*.47)+variation(i+28))%1;
           const x=footprint.left-.25+variation(i+110)*(footprint.right-footprint.left+.58);
           const z=footprint.back+.21+variation(i+160)*(footprint.front-footprint.back-.42);
           const y=.29+(1-phase)*5.15;
           rainStreak(mesh,x,y,z,.027+variation(i+57)*.026,.29+variation(i+68)*.25,
-            i%3 ? "c7e1dc" : "a2c5c6");
+            i%3 ? "d4f0ec" : "98d2d8");
         }
         for (let i=0;i<13;i++) {
           const x=-2.15+i*.74, z=.59;
           const y=.39+(1-(time*1.63+variation(i+74))%1)*2.30;
-          rainStreak(mesh,x,y-.08,z,.028,.16,"c2d6d2");
+          rainStreak(mesh,x,y-.08,z,.028,.16,"ccebe6");
         }
         for (const [i,[x,z,poolRadius]] of rainPools.entries()) {
           const phase = (time*.96 + variation(i+180)) % 1;
           const radius = .070 + phase * poolRadius * .73;
-          waterRings(mesh,x,z,.284,radius,.028*(1-phase)+.007,"c7dbcb");
+          waterRings(mesh,x,z,.284,radius,.028*(1-phase)+.007,"daf5f0");
           if (phase > .68) {
             const drop = .286 + (1-phase)*3.9;
-            rainStreak(mesh,x,drop,z,.031,.20,"d3e4df");
+            rainStreak(mesh,x,drop,z,.031,.20,"e4f7f5");
           }
         }
       }
@@ -1464,11 +2118,13 @@
         dragonflies(mesh,time);
         for (let i=0;i<2;i++) {
           const radius=.10+((time*.35+i*.5)%1)*.38;
-          waterRings(mesh,.65,10.77,.283,radius,.016,"a3bfa9");
+          waterRings(mesh,this.farmer.x,this.farmer.z+.15,.283,radius,.016,"c5f0e2");
         }
       }
       if (this.term === "dew") driftingLeaves(mesh,time);
       if (this.term === "winter") {
+        fireFlames(mesh,farmerTime);
+        this.lampPower[2]=basePower[2]*(1+.11*Math.sin(farmerTime*10)+.05*Math.sin(farmerTime*21));
         kettleSteam(mesh,time);
         snowfall(mesh,time);
       }
@@ -1502,6 +2158,95 @@
       }
       gl.drawArrays(gl.TRIANGLES,first,count);
     }
+    positionFarmer() {
+      let pose = this.farmer;
+      const cx=Math.cos(this.yaw), sx=Math.sin(this.yaw);
+      const cy=Math.cos(this.pitch), sy=Math.sin(this.pitch);
+      if (this.term==="winter") {
+        pose={...pose,flip:(campfire.x-pose.x)*cx-(campfire.z-pose.z)*sx<0};
+      }
+      const feet=pose.y+pose.lift;
+      const scale=.01475;
+      writeFarmerQuad(this.farmerSprite.data,pose,(x,y)=>{
+        const across=x*scale/Math.sqrt(pose.stretch), up=y*scale*pose.stretch;
+        return [pose.x+cx*across-sx*sy*up,feet+cy*up,pose.z-sx*across-cx*sy*up];
+      });
+      const width=scale*(1+pose.lift*.68);
+      const shadowX=this.shadows.shearX, shadowZ=this.shadows.shearZ;
+      const ground=this.term==="grain" ? shallowWater.height : pose.y;
+      writeFarmerQuad(this.farmerShadow.data,pose,(x,y)=>{
+        const height=y*scale*pose.stretch+pose.lift;
+        return [pose.x-shadowX*height-sunHeading[1]*x*width,ground+.007,
+          pose.z-shadowZ*height+sunHeading[0]*x*width];
+      },.35*(1-pose.lift*2.4));
+    }
+    readFarmerTexture() {
+      if (!this.farmerPixels) {
+        const atlas=this.farmerAtlas;
+        const buffer=document.createElement("canvas");
+        buffer.width=atlas.naturalWidth;
+        buffer.height=atlas.naturalHeight;
+        const context=buffer.getContext("2d",{willReadFrequently:true});
+        context.drawImage(atlas,0,0);
+        this.farmerPixels=context.getImageData(0,0,buffer.width,buffer.height);
+      }
+      return this.farmerPixels;
+    }
+    bindFarmerTexture() {
+      const gl=this.gl;
+      if (this.farmerTexture) return;
+      const texture=gl.createTexture();
+      gl.activeTexture(gl.TEXTURE1);
+      try {
+        gl.bindTexture(gl.TEXTURE_2D,texture);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,this.farmerAtlas);
+        gl.uniform1i(this.farmerSampler,1);
+        this.farmerTexture=texture;
+      } finally {
+        if (!this.farmerTexture) gl.deleteTexture(texture);
+        gl.activeTexture(gl.TEXTURE0);
+      }
+    }
+    prepareFarmer() {
+      if (this.farmerAtlasBlocked || !this.farmerAtlas?.naturalWidth) return false;
+      try {
+        if (this.software) this.readFarmerTexture();
+        else this.bindFarmerTexture();
+      } catch (error) {
+        if (error.name !== "SecurityError") throw error;
+        this.farmerAtlasBlocked = true;
+        console.warn("The browser blocked the farmer texture.",error.message);
+        return false;
+      }
+      this.positionFarmer();
+      return true;
+    }
+    gnomonProjection() {
+      const m=this.cameraMatrix;
+      const {x,z,base,height,radius}=gnomon;
+      const project=(px,py,pz)=>[
+        (px*m[0]+py*m[4]+pz*m[8]+m[12]+1)*this.viewWidth/2,
+        (1-px*m[1]-py*m[5]-pz*m[9]-m[13])*this.viewHeight/2
+      ];
+      const points=[];
+      for (const dx of [-radius,radius]) {
+        for (const dz of [-radius,radius]) {
+          points.push(project(x+dx,base+.038,z+dz),project(x+dx,base+height,z+dz));
+        }
+      }
+      if (points.every(([px])=>px<0) || points.every(([px])=>px>this.viewWidth) ||
+          points.every(([,py])=>py<0) || points.every(([,py])=>py>this.viewHeight)) return null;
+      if (poleOccluded(this.landData,[-45*m[2],-45*m[6],-45*m[10]])) return null;
+      const {shearX,shearZ}=this.shadows;
+      return {
+        outline:outlineHull(points),
+        shadow:[project(x,base+.01,z),project(x-shearX*height,base+.01,z-shearZ*height)]
+      };
+    }
     render() {
       if (!this.state) return;
       const canvas = this.canvas;
@@ -1509,13 +2254,17 @@
       if (clientWidth<=0 || clientHeight<=0) return;
       const changedView=this.cameraDirty || clientWidth!==this.viewWidth || clientHeight!==this.viewHeight;
       if (changedView) {
-        this.cameraMatrix=viewMatrix(this.yaw,this.pitch,clientWidth,clientHeight,this.zoom,this.panX,this.panZ);
+        this.cameraMatrix=viewMatrix(this.yaw,this.pitch,clientWidth,clientHeight,this.zoom,this.panX,this.panZ,this.pivotY);
         this.worldUnitsPerPixel=2/(Math.hypot(this.cameraMatrix[0],this.cameraMatrix[8])*clientWidth);
         this.viewWidth=clientWidth;
         this.viewHeight=clientHeight;
         this.cameraDirty=false;
       }
       const matrix=this.cameraMatrix;
+      if (this.onGnomonView && (changedView || this.gnomonGeometry!==this.landData)) {
+        this.gnomonGeometry=this.landData;
+        this.onGnomonView(this.gnomonProjection());
+      }
       if (changedView && this.plinthShadow) {
         const {left,right,back,front}=footprint;
         const rim=[[left,back],[right,back],[right,front],[left,front]];
@@ -1529,9 +2278,11 @@
           this.lastPlinthShadow=points;
         }
       }
+      const farmerReady=this.prepareFarmer();
       if (this.software) {
+        const farmer=farmerReady && {shadow:this.farmerShadow,sprite:this.farmerSprite,texture:this.farmerPixels};
         this.software.render(matrix,clientWidth,clientHeight,this.landData,this.actor.data,this.waterData,
-          this.state.light,this.shadows);
+          this.state.light,this.shadows,farmer);
         return;
       }
       const gl = this.gl;
@@ -1547,9 +2298,31 @@
       gl.uniform3fv(this.shadowInfo,[this.shadows.shearX,this.shadows.shearZ,this.shadows.opacity]);
       gl.uniform3fv(this.hazeTint,this.shadows.haze);
       gl.uniform3fv(this.warmth,this.state.light);
+      gl.uniform3fv(this.sunTint,this.state.sunTint);
+      gl.uniform3fv(this.shadowTint,this.state.shadowTint);
+      gl.uniform3fv(this.practicalPower,this.lampPower);
+      gl.uniform1f(this.waterTime,this.sceneTime || 0);
       gl.uniform1f(this.waterPass,0);
       this.draw(this.world,0,this.landCount);
+      if (farmerReady) {
+        this.uploadGpuBuffer(this.farmerShadow,true);
+        gl.enable(gl.BLEND);
+        gl.depthMask(false);
+        gl.uniform1f(this.farmerPass,2);
+        this.draw(this.farmerShadow);
+        gl.uniform1f(this.farmerPass,0);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+      }
       this.draw(this.actor);
+      if (farmerReady) {
+        this.uploadGpuBuffer(this.farmerSprite,true);
+        gl.enable(gl.BLEND);
+        gl.uniform1f(this.farmerPass,1);
+        this.draw(this.farmerSprite);
+        gl.uniform1f(this.farmerPass,0);
+        gl.disable(gl.BLEND);
+      }
       if (this.waterData.length) {
         gl.enable(gl.BLEND);
         gl.uniform1f(this.waterPass,1);
@@ -1560,10 +2333,12 @@
     loop(time) {
       this.frameQueued = false;
       if (!this.state) return;
+      this.stepCamera(time);
       const animate=this.motion && (!this.software || this.lastActorFrame===undefined || time-this.lastActorFrame>=32);
       if (animate) {
         this.lastActorFrame=time;
-        this.act(time/1000);
+        this.farmerStart ??= time;
+        this.act(time/1000,(time-this.farmerStart)/1000);
       }
       if (animate || this.cameraDirty) this.render();
       if (!this.motion) return;
