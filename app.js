@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   "use strict";
 
   const terms = {
@@ -142,18 +142,12 @@
     const altitude = Math.PI / 2 - Math.abs(latitude - declination);
     const shadowRatio = 1 / Math.tan(altitude);
     const diagramHeight = 23;
-    const sunDistance = 44;
-    const sunX = 32 - Math.cos(altitude) * sunDistance;
-    const sunY = 62 - Math.sin(altitude) * sunDistance;
-    const rayX = sunX - 32;
-    const rayY = sunY - 38;
-    sundial.style.setProperty("--shadow-length", diagramHeight * shadowRatio + "px");
-    sundial.style.setProperty("--sun-position", sunX - 4 + "px");
-    sundial.style.setProperty("--sun-height", sunY - 4 + "px");
-    sundial.style.setProperty("--ray-length", Math.hypot(rayX,rayY) + "px");
-    sundial.style.setProperty("--ray-angle", Math.atan2(rayY,rayX) + "rad");
+    const sunDistance = 14;
+    sundial.style.setProperty("--shadow-length", (diagramHeight * shadowRatio).toFixed(2) + "px");
+    sundial.style.setProperty("--sun-dx", (-Math.cos(altitude) * sunDistance).toFixed(2) + "px");
+    sundial.style.setProperty("--sun-dy", (-Math.sin(altitude) * sunDistance).toFixed(2) + "px");
     const ratio=shadowRatio.toFixed(2);
-    shadowReadout.textContent = ratio + "× 竿高";
+    shadowReadout.innerHTML = "<b>" + ratio + "</b><span>× 竿高</span>";
     sundial.setAttribute("aria-label", term.name + "正午日影，约为竿高的 " + ratio + " 倍");
     document.body.dataset.season = key;
     note.textContent = term.note;
@@ -372,3 +366,5 @@
   document.querySelector("#zoom-out").addEventListener("click", () => scene.magnify(1/1.15));
   document.querySelector("#reset-view").addEventListener("click", () => scene.reset());
 })();
+
+
