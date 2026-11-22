@@ -541,6 +541,129 @@
     todayButton.addEventListener("click", () => selectTerm(targetIndex));
   }
 
+  // —— 时辰：改光、点灯、农夫回屋 ——
+  const timeButtons = Array.from(document.querySelectorAll(".time-strip button"));
+  function applyHour(hour, tone) {
+    document.body.dataset.tone = tone;
+    timeButtons.forEach(button =>
+      button.setAttribute("aria-current", String(Number(button.dataset.hour) === hour)));
+    scene?.setHour(hour);
+    restartAmbience();
+  }
+  timeButtons.forEach(button =>
+    button.addEventListener("click", () => applyHour(Number(button.dataset.hour), button.dataset.tone)));
+  document.body.dataset.tone = "day";
+
+  // —— 环境音：蝉与虫用 WebAudio 现场合成，不加载音频文件 ——
+  const soundToggle = document.querySelector("#sound-toggle");
+  const audio = { ctx: null, master: null, nodes: [], timer: null };
+  let soundOn = false;
+
+  function ensureAudio() {
+    if (audio.ctx) return audio.ctx;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audio.ctx = new Ctx();
+    audio.master = audio.ctx.createGain();
+    audio.master.gain.value = 0;
+    audio.master.connect(audio.ctx.destination);
+    return audio.ctx;
+  }
+
+  function stopAmbience() {
+    if (audio.timer) { clearInterval(audio.timer); audio.timer = null; }
+    for (const node of audio.nodes) {
+      try { node.stop && node.stop(); node.disconnect(); } catch (error) { /* 已停止 */ }
+    }
+    audio.nodes = [];
+  }
+
+  function ambienceKind() {
+    const tone = document.body.dataset.tone;
+    if (tone === "night" || tone === "dusk") return "cricket";
+    if (document.body.dataset.season === "grain") return "cicada";
+    return "none";
+  }
+
+  function startAmbience() {
+    stopAmbience();
+    const ctx = ensureAudio();
+    if (!ctx || !soundOn) return;
+    if (ctx.state === "suspended") ctx.resume();
+    const kind = ambienceKind();
+    if (kind === "none") return;
+    const bus = ctx.createGain();
+    bus.gain.value = kind === "cicada" ? .13 : .09;
+    bus.connect(audio.master);
+    audio.nodes.push(bus);
+    if (kind === "cicada") {
+      const length = Math.floor(ctx.sampleRate * 2);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.value = 4600;
+      band.Q.value = 7;
+      const tremolo = ctx.createGain();
+      tremolo.gain.value = .55;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 54;
+      const depth = ctx.createGain();
+      depth.gain.value = .42;
+      lfo.connect(depth);
+      depth.connect(tremolo.gain);
+      source.connect(band);
+      band.connect(tremolo);
+      tremolo.connect(bus);
+      source.start();
+      lfo.start();
+      audio.nodes.push(source, lfo, band, tremolo, depth);
+    } else {
+      const chirp = () => {
+        if (!audio.ctx) return;
+        const now = audio.ctx.currentTime;
+        const osc = audio.ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = 4100 + Math.random() * 500;
+        const env = audio.ctx.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(.5, now + .012);
+        env.gain.exponentialRampToValueAtTime(.001, now + .10);
+        osc.connect(env);
+        env.connect(bus);
+        osc.start(now);
+        osc.stop(now + .13);
+      };
+      const tick = () => {
+        for (let i = 0; i < 3; i++) setTimeout(chirp, i * 78);
+      };
+      tick();
+      audio.timer = setInterval(tick, 1100 + Math.random() * 400);
+    }
+  }
+
+  function restartAmbience() {
+    if (!soundOn) return;
+    startAmbience();
+  }
+
+  soundToggle?.addEventListener("click", () => {
+    soundOn = !soundOn;
+    soundToggle.setAttribute("aria-pressed", String(soundOn));
+    if (soundOn) {
+      ensureAudio();
+      audio.master.gain.setTargetAtTime(.55, audio.ctx.currentTime, .5);
+      startAmbience();
+    } else {
+      stopAmbience();
+      if (audio.master) audio.master.gain.setTargetAtTime(0, audio.ctx.currentTime, .2);
+    }
+  });
+
   if (!scene) return;
 
   function openPoleInspection() {
