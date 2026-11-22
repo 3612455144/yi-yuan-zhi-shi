@@ -1,4 +1,4 @@
-@font-face {
+﻿@font-face {
   font-family:"Yard WenKai";
   src:url("fonts/yard-wenkai.woff2") format("woff2");
   font-weight:500;
@@ -94,16 +94,34 @@ button:focus-visible, canvas:focus-visible { outline:2px solid currentColor; out
   left:7px; width:5px; border-left:1.5px solid currentColor; opacity:.64;
   background:repeating-linear-gradient(to bottom,currentColor 0 1px,transparent 1px calc(var(--ruler-step) / 4));
 }
-.calendar-mark { position:relative; display:flex; align-items:center; padding-left:30px; font-size:clamp(15px,.98vw,18px); letter-spacing:.09em; }
-.calendar-mark::before { content:""; position:absolute; left:7px; top:50%; width:12px; border-top:1px solid currentColor; }
+/* 刻度：不可点，压低存在感 */
+.calendar-mark {
+  position:relative; display:flex; align-items:center; padding-left:30px;
+  font-size:clamp(15px,.98vw,18px); letter-spacing:.09em;
+  opacity:.55; cursor:default;
+}
+.calendar-mark::before { content:""; position:absolute; left:7px; top:50%; width:10px; border-top:1px solid currentColor; opacity:.7; }
+/* 入口：可点，站点圆点 + 下划线 */
 .term {
   position:relative; display:flex; align-items:center; gap:8px;
   padding:0 0 0 35px; border:0; background:transparent; text-align:left;
-  text-shadow:inherit; pointer-events:auto;
+  text-shadow:inherit; pointer-events:auto; cursor:pointer;
 }
 .term::before { content:""; position:absolute; left:7px; top:50%; width:20px; border-top:2px solid currentColor; }
-.term-name { font:500 clamp(21px,1.45vw,25px)/1 var(--display); letter-spacing:.065em; }
-.term small { font:500 clamp(13px,.86vw,15px)/1.12 var(--body-font); }
+.term::after {
+  content:""; position:absolute; left:24px; top:50%; width:6px; height:6px;
+  border-radius:50%; background:currentColor; transform:translate(-50%,-50%);
+}
+.term .term-name {
+  text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:.24em;
+}
+.term:hover .term-name, .term[aria-current="true"] .term-name { text-decoration-thickness:2px; }
+.term small::after { content:"→"; margin-left:.55em; opacity:.5; font-size:.9em; }
+.ruler-sub {
+  margin:7px 0 9px; font-size:clamp(12px,.82vw,14px); letter-spacing:.06em; opacity:.74;
+}
+.term-name { font:500 clamp(21px,1.45vw,25px)/1 var(--display); letter-spacing:.065em; white-space:nowrap; }
+.term small { font:500 clamp(13px,.86vw,15px)/1.12 var(--body-font); white-space:nowrap; }
 .term[aria-current="true"], .term:hover { color:var(--mark); }
 .term[aria-current="true"] .term-name { font-size:clamp(24px,1.8vw,31px); }
 .term[aria-current="true"]::before { width:25px; border-width:3px; }
@@ -339,6 +357,7 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .view-hint { font-size:14px; }
 }
 @media (max-width:720px), (max-height:680px) {
+  .ruler-sub { display:none; }
   .calendar {
     width:min(100%,335px); display:grid; grid-template-columns:max-content 1fr;
     grid-template-areas:"heading links" "scale scale"; align-items:center; column-gap:8px;
@@ -355,3 +374,5 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   *, *::before, *::after { transition:none !important; animation:none !important; }
   .season-interlude { display:none; }
 }
+
+
