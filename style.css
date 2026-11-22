@@ -162,7 +162,19 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
   transform:translateY(-50%) rotate(45deg); pointer-events:none;
   background:var(--hud-gold); box-shadow:0 0 9px #ffbf6766;
 }
-.yard-links { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--hud-line); padding-top:5px; }
+.today-jump {
+  display:inline-flex; align-items:center; gap:7px; margin-top:9px; padding:5px 10px 5px 8px;
+  border:1px solid var(--hud-line); border-radius:999px; background:transparent;
+  color:var(--hud-muted); font:500 13px/1 var(--body-font); letter-spacing:.08em;
+  text-shadow:inherit; transition:color .2s ease, border-color .2s ease, background .2s ease;
+}
+.today-jump b { font-weight:500; color:var(--hud-gold); letter-spacing:.1em; }
+.today-jump:hover { color:var(--ink, #fff8eb); border-color:var(--hud-gold); background:#ffffff0a; }
+.today-jump:focus-visible { outline:2px solid var(--hud-gold); outline-offset:2px; }
+.today-dot {
+  width:5px; height:5px; border-radius:50%; background:var(--hud-gold);
+  box-shadow:0 0 7px #ffbf6780;
+}.yard-links { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--hud-line); padding-top:5px; }
 .yard-links button {
   position:relative; display:grid; place-items:center; align-content:center; gap:5px;
   min-width:0; min-height:clamp(61px,4.1vw,78px); padding:5px 2px 9px; border:0; background:transparent;
@@ -538,5 +550,9 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .season-interlude { display:none; }
 }
 
-
-
+/* 窄屏：说明行收起，“今日”chip 压缩，避免把入院一行推到场地上 */
+@media (max-width:720px), (max-height:680px) {
+  .ruler-sub { display:none; }
+  .today-jump { margin-top:4px; padding:3px 9px 3px 7px; font-size:11.5px; gap:6px; }
+  .today-dot { width:4px; height:4px; }
+}
