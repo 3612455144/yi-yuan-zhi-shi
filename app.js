@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   "use strict";
 
   const terms = {
@@ -197,6 +197,114 @@
     document.querySelector(".view-controls").hidden = true;
   }
 
+  // —— 三候热点：把七十二候里的“候”贴到院子里的实物上 ——
+  const HOU_DATA = {
+    rain: [
+      { at:[-2.02,.52,9.00], text:"雨水头五天，河冰解冻，水獭下水捕鱼，把鱼摆在岸上，像在祭祀。" },
+      { at:[ 2.40,5.20,-3.60], text:"再过五天，大雁从南方飞回北方，排成人字掠过院子上空。" },
+      { at:[-2.50,.46,2.20], text:"最后五天，草木抽出新芽，田埂上先绿了一层。" }
+    ],
+    grain: [
+      { at:[-1.30,.64,6.50], text:"芒种头五天，去年深秋产下的螳螂卵孵化，小螳螂在田埂草丛里捕虫。" },
+      { at:[ 7.28,3.45,-.94], text:"再过五天，伯劳鸟站上枝头开始鸣叫，声音尖利。" },
+      { at:[ 1.60,1.02,14.00], text:"最后五天，会学百鸟叫的反舌鸟忽然安静了。" }
+    ],
+    dew: [
+      { at:[ 4.00,5.20,-3.60], text:"寒露头五天，最后一批大雁南迁，在院子上空排成队列。" },
+      { at:[ 6.60,.54,12.50], text:"再过五天，雀鸟少见、海边蛤蜊多了，古人以为雀入大水化成了蛤。" },
+      { at:[ 0.60,.82,-.40], text:"最后五天，菊花开出黄花，院前的秋菊正当其时。" }
+    ],
+    winter: [
+      { at:[ 0.00,5.20,-3.60], text:"小雪头五天，天冷了不再下雨，彩虹也就看不见了。" },
+      { at:[ 4.20,3.40,-2.20], text:"再过五天，阳气上升、阴气下沉，天地不通，万物失去生机。" },
+      { at:[ 2.00,1.02,14.20], text:"最后五天，天地闭塞，转入严冬。" }
+    ]
+  };
+  const HOU_ORDER = ["初候","二候","三候"];
+  const houSpots = Array.from(document.querySelectorAll(".hou-spot"));
+  const houCard = document.querySelector("#hou-card");
+  const houOrder = document.querySelector("#hou-order");
+  const houTermName = document.querySelector("#hou-term");
+  const houTitle = document.querySelector("#hou-title");
+  const houTextNode = document.querySelector("#hou-text");
+  let houActive = -1;
+
+  function currentTermName() {
+    const button = buttons.find(entry => entry.getAttribute("aria-current") === "true");
+    return button ? button.querySelector(".term-name").textContent : "";
+  }
+
+  function houName(index) {
+    const term = terms[document.body.dataset.season];
+    return term && term.hou ? term.hou[index] : "";
+  }
+
+  function closeHou() {
+    if (houActive < 0) return;
+    houActive = -1;
+    houCard.hidden = true;
+    houSpots.forEach(spot => spot.setAttribute("aria-expanded","false"));
+  }
+
+  function placeHouCard() {
+    if (houActive < 0) return;
+    const spot = houSpots[houActive];
+    const x = Number(spot.dataset.x), y = Number(spot.dataset.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const width = houCard.offsetWidth || 250;
+    const half = width / 2 + 14;
+    houCard.style.left = Math.min(Math.max(x, half), innerWidth - half) + "px";
+    houCard.style.top = y + "px";
+    houCard.classList.toggle("is-below", y - (houCard.offsetHeight || 150) - 18 < 8);
+  }
+
+  function openHou(index) {
+    const data = HOU_DATA[document.body.dataset.season];
+    const item = data && data[index];
+    if (!item) return;
+    houActive = index;
+    houOrder.textContent = HOU_ORDER[index];
+    houTermName.textContent = currentTermName();
+    houTitle.textContent = houName(index);
+    houTextNode.textContent = item.text;
+    houCard.hidden = false;
+    houSpots.forEach((spot,i) => spot.setAttribute("aria-expanded", i === index ? "true" : "false"));
+    placeHouCard();
+  }
+
+  function layoutHou() {
+    const data = HOU_DATA[document.body.dataset.season];
+    houSpots.forEach((spot,index) => {
+      const item = data && data[index];
+      const point = item && scene ? scene.projectPoint(item.at[0],item.at[1],item.at[2]) : null;
+      if (!point || !Number.isFinite(point.x)) {
+        spot.classList.remove("is-live");
+        return;
+      }
+      spot.dataset.x = point.x.toFixed(1);
+      spot.dataset.y = point.y.toFixed(1);
+      spot.style.transform = `translate3d(${point.x.toFixed(1)}px,${point.y.toFixed(1)}px,0)`;
+      spot.classList.add("is-live");
+      spot.querySelector(".hou-label").textContent = houName(index);
+      spot.setAttribute("aria-label", HOU_ORDER[index] + " " + houName(index));
+      spot.hidden = false;
+    });
+    placeHouCard();
+  }
+
+  houSpots.forEach((spot,index) => {
+    spot.addEventListener("click", () => { houActive === index ? closeHou() : openHou(index); });
+  });
+  document.querySelector("#hou-close").addEventListener("click", closeHou);
+  document.addEventListener("pointerdown", event => {
+    if (houActive < 0) return;
+    if (event.target.closest("#hou-card, .hou-spot")) return;
+    closeHou();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && houActive >= 0) { closeHou(); event.stopPropagation(); }
+  }, true);
+
   function showTerm(key) {
     const term = terms[key];
     const declination = Math.asin(Math.sin(23.44 * degrees) * Math.sin(term.longitude * degrees));
@@ -237,6 +345,8 @@
       else button.removeAttribute("aria-current");
     }
     scene?.useTerm(key,shadowRatio);
+    closeHou();
+    layoutHou();
   }
 
   function toggleHud() {
@@ -425,7 +535,7 @@
       width:(Math.max(...xs)-left+20)+"px", height:(Math.max(...ys)-top+16)+"px"
     });
   }
-  if (scene) scene.onGnomonView=updatePoleProjection;
+  if (scene) { scene.onGnomonView=updatePoleProjection; scene.onView=layoutHou; }
 
   // 打开即落在“今日”节气所在的院落，尺子同步滚到那一格（首帧不做滚动动画）
   showTerm(todayYard);
@@ -578,3 +688,6 @@
     else scene.reset();
   });
 })();
+
+
+
