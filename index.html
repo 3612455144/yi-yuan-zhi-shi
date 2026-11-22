@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#192b2c">
   <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body data-season="grain">
   <main class="exhibit">
@@ -49,6 +49,10 @@
             <span class="calendar-mark">大寒</span>
           </div>
         </div>
+        <button id="today-jump" class="today-jump" type="button">
+          <span class="today-dot" aria-hidden="true"></span>
+          <span>今日 · <b id="today-name">小雪</b></span>
+        </button>
         <div class="yard-links" role="group" aria-label="四个小院场景">
           <button type="button" data-yard="rain">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-1.4 3.2-6 7.5-6 11.3a6 6 0 0 0 12 0C18 10.5 13.4 6.2 12 3Zm-3 11a3 3 0 0 0 3 3"/></svg>
@@ -235,11 +239,12 @@
       </div>
     </div>
   </main>
-  <script src="assets/farmer-data.js?v=5"></script>
-  <script src="scene.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="assets/farmer-data.js?v=6"></script>
+  <script src="scene.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
+
 
 
 
