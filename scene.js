@@ -2226,8 +2226,17 @@
       this.positionFarmer();
       return true;
     }
-    gnomonProjection() {
-      const m=this.cameraMatrix;
+    // 把任意世界坐标投到画布像素坐标：用于把 DOM 热点贴到场景里的物件上
+    projectPoint(x, y, z) {
+      const m = this.cameraMatrix;
+      if (!m || !this.viewWidth) return null;
+      return {
+        x: (x*m[0] + y*m[4] + z*m[8] + m[12] + 1) * this.viewWidth / 2,
+        y: (1 - x*m[1] - y*m[5] - z*m[9] - m[13]) * this.viewHeight / 2
+      };
+    }
+
+    gnomonProjection() {      const m=this.cameraMatrix;
       const {x,z,base,height,radius}=gnomon;
       const project=(px,py,pz)=>[
         (px*m[0]+py*m[4]+pz*m[8]+m[12]+1)*this.viewWidth/2,
@@ -2262,6 +2271,7 @@
         this.cameraDirty=false;
       }
       const matrix=this.cameraMatrix;
+      if (changedView && this.onView) this.onView();
       if (this.onGnomonView && (changedView || this.gnomonGeometry!==this.landData)) {
         this.gnomonGeometry=this.landData;
         this.onGnomonView(this.gnomonProjection());
