@@ -55,6 +55,25 @@
   const number = document.querySelector("#term-number");
   const marks = Array.from(ruler.children);
   const stops = buttons.map(button => marks.indexOf(button));
+
+  // —— 今日节气：按公历近似日期定位，四时各对应一座小院 ——
+  const TERM_NAMES = ["立春","雨水","惊蛰","春分","清明","谷雨","立夏","小满","芒种","夏至","小暑","大暑",
+                      "立秋","处暑","白露","秋分","寒露","霜降","立冬","小雪","大雪","冬至","小寒","大寒"];
+  const TERM_DATES = [[2,4],[2,19],[3,5],[3,20],[4,5],[4,20],[5,5],[5,21],[6,5],[6,21],[7,7],[7,22],
+                      [8,7],[8,23],[9,7],[9,23],[10,8],[10,23],[11,7],[11,22],[12,7],[12,21],[1,5],[1,20]];
+  const YARD_ORDER = ["rain","grain","dew","winter"];   // 春·夏·秋·冬
+  function todayTermIndex(now = new Date()) {
+    const month = now.getMonth() + 1, day = now.getDate();
+    if (month === 1) return day >= 20 ? 23 : day >= 5 ? 22 : 21;
+    let index = 21;                                     // 冬至起算
+    for (let i = 0; i < 22; i++) {
+      const [m, d] = TERM_DATES[i];
+      if (month > m || (month === m && day >= d)) index = i;
+    }
+    return index;
+  }
+  const todayIndex = todayTermIndex();
+  const todayYard = YARD_ORDER[Math.floor(todayIndex / 6)];
   const note = document.querySelector("#term-note");
   const summary = document.querySelector("#term-summary");
   const guide = document.querySelector("#season-guide");
@@ -244,7 +263,7 @@
     }
   });
 
-  let targetIndex = buttons.findIndex(button => button.getAttribute("aria-current") === "true");
+  let targetIndex = buttons.findIndex(button => button.dataset.season === todayYard);
   if (targetIndex < 0) targetIndex = 1;
   interlude.style.setProperty("--dial-angle", -stops[targetIndex] * dialStep + "deg");
   let pendingIndex = null;
@@ -407,7 +426,23 @@
     });
   }
   if (scene) scene.onGnomonView=updatePoleProjection;
-  showTerm("grain");
+
+  // 打开即落在“今日”节气所在的院落，尺子同步滚到那一格（首帧不做滚动动画）
+  showTerm(todayYard);
+  ruler.style.transition = "none";
+  ruler.style.setProperty("--ruler-index", stops[targetIndex]);
+  interlude.style.setProperty("--dial-angle", -stops[targetIndex] * dialStep + "deg");
+  requestAnimationFrame(() => { ruler.style.transition = ""; });
+
+  const todayButton = document.querySelector("#today-jump");
+  const todayName = document.querySelector("#today-name");
+  if (todayName) todayName.textContent = TERM_NAMES[todayIndex];
+  if (todayButton) {
+    todayButton.setAttribute("aria-label", "回到今日节气：" + TERM_NAMES[todayIndex]);
+    todayButton.title = "今日 " + TERM_NAMES[todayIndex];
+    todayButton.addEventListener("click", () => selectTerm(targetIndex));
+  }
+
   if (!scene) return;
 
   function openPoleInspection() {
