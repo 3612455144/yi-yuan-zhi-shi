@@ -131,7 +131,7 @@
   };
 
   const yardTrees = [
-    { x:-2.57, z:1.35, scale:1, lean:-1, kind:"willow" },
+    { x:7.30, z:13.20, scale:1, lean:-1, kind:"willow" },
     { x:7.28, z:-.94, scale:1.05, lean:1, kind:"broadleaf" },
     { x:7.27, z:8.02, scale:.61, lean:1, kind:"willow" }
   ];
@@ -641,7 +641,8 @@
   const sunHeading = [-.8,-.6];
   const shadeOpacity = {rain:.52,grain:.80,dew:.84,winter:.62};
   const hazeColor = {rain:"a4d4c6",grain:"b6e0cc",dew:"cfbda8",winter:"b8cee0"};
-  const gnomon = {x:5.08,z:13.35,base:.323,height:1.16,radius:.053};
+  // 立杆置于原先大树的位置；圭面必须沿日影方向 (0.8,0.6) 铺开，影子才会落在刻度上
+  const gnomon = {x:-2.45,z:1.02,base:.345,height:1.02,radius:.062};
 
   function sundialStand(mesh) {
     const {x,z,base,height}=gnomon;
@@ -649,22 +650,22 @@
     const slab=(start,end,width,y,tone)=>{
       mesh.face([point(start,-width,y),point(start,width,y),point(end,width,y),point(end,-width,y)],tone);
     };
-    slab(-.20,1.91,.25,base-.011,"988a71");
-    slab(-.17,1.88,.214,base,"d9c9a9");
-    for (const side of [-.25,.25]) {
-      mesh.face([point(-.20,side,.275),point(1.91,side,.275),
-        point(1.91,side,base-.011),point(-.20,side,base-.011)],"91826c");
+    const L=height*1.6;
+    slab(-.20,L,.30,base-.011,"6f6450");
+    slab(-.17,L-.03,.262,base,"9d8e73");
+    for (const side of [-.30,.30]) {
+      mesh.face([point(-.20,side,.275),point(L,side,.275),
+        point(L,side,base-.011),point(-.20,side,base-.011)],"91826c");
     }
-    slab(.13,1.78,.012,base+.003,"a89574");
+    slab(.13,L-.13,.012,base+.003,"7b6c52");
     for (let i=1;i<=6;i++) {
       const place=i*height/4;
       slab(place-.013,place+.013,i%4===0 ? .18 : .102,base+.004,
-        i%4===0 ? "78674c" : "b3a07f");
+        i%4===0 ? "5f5238" : "8b7a5c");
     }
     mesh.box(x,base+.019,z,.19,.038,.19,"a89b81","88785d");
     mesh.beam([x,base+.038,z],[x,base+height,z],gnomon.radius*2,gnomon.radius*2,"80613f");
   }
-
   function chrysanthemum(mesh, x, base, z, scale, seed) {
     for (let i=0;i<13;i++) {
       const angle=i*2.4, reach=(i===0 ? 0 : .18+variation(seed+i)*.42)*scale;
@@ -2261,6 +2262,7 @@
         this.cameraDirty=false;
       }
       const matrix=this.cameraMatrix;
+      if (changedView && this.onView) this.onView(this.yaw,this.pitch,this.zoom);
       if (this.onGnomonView && (changedView || this.gnomonGeometry!==this.landData)) {
         this.gnomonGeometry=this.landData;
         this.onGnomonView(this.gnomonProjection());
@@ -2353,3 +2355,12 @@
   }
   window.YardScene = YardScene;
 })();
+
+
+
+
+
+
+
+
+
