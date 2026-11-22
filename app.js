@@ -222,6 +222,53 @@
   };
   const HOU_ORDER = ["初候","二候","三候"];
   const houLines = document.querySelector("#hou-lines");
+  const houPointer = document.querySelector("#hou-pointer");
+  const houPointerLabel = document.querySelector(".hou-pointer-label");
+
+  // 每一候在院子里的落点，用来在场景中把对应的物件指出来
+  const HOU_AT = {
+    rain:   [[-2.10,.55,9.00], [ 2.40,5.30,-3.40], [-2.50,.45,2.10]],
+    grain:  [[-2.10,.55,6.10], [ 8.78,4.30,-1.95], [ 1.70,1.35,15.06]],
+    dew:    [[ 4.00,5.20,-3.40], [ 6.50,.35,12.40], [ 0.60,.85,-.40]],
+    winter: [[ 0.00,5.60,-3.20], [ 4.00,4.10,-2.30], [ 2.00,.90,14.90]]
+  };
+  let houSel = -1;
+
+  function houName(index) {
+    const term = terms[document.body.dataset.season];
+    return term && term.hou ? term.hou[index] : "";
+  }
+
+  function updateHouPointer() {
+    if (!houPointer) return;
+    const spots = HOU_AT[document.body.dataset.season] || [];
+    const at = houSel >= 0 ? spots[houSel] : null;
+    const point = at && scene ? scene.projectPoint(at[0],at[1],at[2]) : null;
+    if (!point) { houPointer.hidden = true; return; }
+    houPointer.hidden = false;
+    houPointer.style.left = point.x.toFixed(1) + "px";
+    houPointer.style.top = point.y.toFixed(1) + "px";
+    if (houPointerLabel) houPointerLabel.textContent = houName(houSel);
+  }
+
+  function paintHou() {
+    ruler.querySelectorAll(".hou-mark").forEach((row,index) => {
+      row.classList.toggle("is-hou", index === houSel);
+      row.setAttribute("aria-pressed", index === houSel ? "true" : "false");
+    });
+    if (houLines) [...houLines.children].forEach((line,index) => {
+      line.classList.toggle("is-hou", index === houSel);
+    });
+    updateHouPointer();
+  }
+
+  function selectHou(index) {
+    houSel = houSel === index ? -1 : index;
+    paintHou();
+    if (houSel < 0) return;
+    const row = ruler.querySelectorAll(".hou-mark")[houSel];
+    if (row) centerRuler(row, 0);
+  }
 
   // 在尺子上把当前节气展开成三小段，后续节气自然被挤下去
   function expandRuler(button, key) {
@@ -231,18 +278,30 @@
     const names = terms[key] && terms[key].hou ? terms[key].hou : [];
     const fragment = document.createDocumentFragment();
     HOU_ORDER.forEach((label,index) => {
-      const row = document.createElement("div");
+      const row = document.createElement("button");
+      row.type = "button";
       row.className = "hou-mark";
       row.dataset.hou = String(index);
+      row.setAttribute("aria-pressed", "false");
+      row.setAttribute("aria-label", label + " " + (names[index] || ""));
       row.innerHTML = `<b>${label}</b><span>${names[index] || ""}</span>`;
+      row.addEventListener("click", () => selectHou(index));
       fragment.appendChild(row);
     });
     button.after(fragment);
     if (houLines) {
       houLines.innerHTML = HOU_ORDER.map((label,index) =>
-        `<li><b>${label}</b><span>${names[index] || ""}</span>${texts[index] || ""}</li>`).join("");
+        `<li role="button" tabindex="0" data-hou="${index}"><b>${label}</b><span>${names[index] || ""}</span>${texts[index] || ""}</li>`).join("");
+      [...houLines.children].forEach((line,index) => {
+        line.addEventListener("click", () => selectHou(index));
+        line.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectHou(index); }
+        });
+      });
       houLines.hidden = false;
     }
+    houSel = -1;
+    paintHou();
   }
 
   // 尺子的位移改成按实际 offsetTop 计算，展开后自动把目标节气重新居中
@@ -484,7 +543,7 @@
       width:(Math.max(...xs)-left+20)+"px", height:(Math.max(...ys)-top+16)+"px"
     });
   }
-  if (scene) scene.onGnomonView=updatePoleProjection;
+  if (scene) { scene.onGnomonView=updatePoleProjection; scene.onView=updateHouPointer; }
 
   // 打开即落在“今日”节气所在的院落，尺子同步滚到那一格（首帧不做滚动动画）
   showTerm(todayYard);
@@ -637,6 +696,7 @@
     else scene.reset();
   });
 })();
+
 
 
 
