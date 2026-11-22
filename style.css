@@ -121,10 +121,22 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
 }
 .terms {
   position:absolute; width:100%; top:calc(50% - var(--ruler-step) / 2);
-  display:grid; grid-auto-rows:var(--ruler-step);
-  transform:translateY(calc(var(--ruler-index) * var(--ruler-step) * -1));
+  display:flex; flex-direction:column;
+  transform:translateY(var(--ruler-shift, 0px));
   transition:transform 250ms cubic-bezier(.25,.73,.28,1);
 }
+.calendar-mark, .term { flex:0 0 var(--ruler-step); }
+.hou-mark {
+  flex:0 0 calc(var(--ruler-step) * .66);
+  position:relative; display:flex; align-items:baseline; gap:7px;
+  padding-left:52px; font-size:11.5px; letter-spacing:.06em; color:var(--hud-muted);
+}
+.hou-mark::before {
+  content:""; position:absolute; left:30px; top:50%; width:14px;
+  border-top:1px dashed var(--hud-line);
+}
+.hou-mark b { font-weight:500; font-size:10.5px; letter-spacing:.14em; color:var(--hud-gold); opacity:.85; }
+.hou-mark span { font-size:12px; letter-spacing:.08em; color:var(--hud-muted); }
 .terms::before {
   content:""; position:absolute; top:calc(var(--ruler-step) / 2); bottom:calc(var(--ruler-step) / 2);
   left:10px; width:4px; border-left:1px solid var(--hud-line);
@@ -188,7 +200,10 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
   fill:none; stroke:currentColor; stroke-width:1.65; stroke-linecap:round; stroke-linejoin:round;
 }
 .yard-links svg { width:clamp(28px,1.9vw,36px); height:auto; }
-.season-note {
+.hou-lines { list-style:none; margin:0 0 2px; padding:0; display:grid; gap:5px; }
+.hou-lines li { font-size:10.8px; line-height:1.5; color:var(--hud-muted); letter-spacing:.01em; }
+.hou-lines b { color:var(--hud-gold); font-weight:500; font-size:10px; letter-spacing:.12em; margin-right:5px; }
+.hou-lines span { color:#fff8eb; letter-spacing:.08em; margin-right:7px; }.season-note {
   position:relative; max-width:100%;
   border-top:1px solid var(--hud-line); padding:13px 0 0 16px;
 }
@@ -197,6 +212,7 @@ body:has(#season-guide[open]) .stage-hint { opacity:0; }
   transform:rotate(45deg); background:var(--hud-gold);
 }
 .season-note p { margin:0; font-size:clamp(15px,1.05vw,18px); line-height:1.65; text-wrap:pretty; }
+.season-note:has(.hou-lines:not([hidden])) #term-summary { display:none; }
 .stage-tools {
   position:absolute; z-index:3; right:var(--hud-edge); bottom:var(--hud-bottom);
   color:var(--hud-ink); text-shadow:var(--hud-shadow);
@@ -519,7 +535,10 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .yard-links { padding:3px 0 0; }
   .yard-links button { min-height:44px; display:flex; align-items:center; justify-content:center; gap:5px; font-size:13px; }
   .yard-links svg { width:16px; height:16px; }
-  .season-note { align-self:end; padding-top:9px; }
+  .hou-lines { list-style:none; margin:0 0 2px; padding:0; display:grid; gap:5px; }
+.hou-lines li { font-size:10.8px; line-height:1.5; color:var(--hud-muted); letter-spacing:.01em; }
+.hou-lines b { color:var(--hud-gold); font-weight:500; font-size:10px; letter-spacing:.12em; margin-right:5px; }
+.hou-lines span { color:#fff8eb; letter-spacing:.08em; margin-right:7px; }.season-note { align-self:end; padding-top:9px; }
   .season-note::before { top:17px; }
   #yard, #yard-compatibility, #yard-shadow, #yard-hotspots { inset:240px 0 90px; height:calc(100% - 330px); }
   .gnomon-inspect { bottom:calc(var(--hud-bottom) + 53px); }
@@ -624,3 +643,9 @@ body[data-season="winter"] .landscape-sun { visibility:hidden; }
   .hou-text { font-size:12px; line-height:1.65; }
 }
 
+/* 窄屏：尺子只显示“初候/二候/三候”，候名交给左侧文字，避免折行 */
+@media (max-width:720px), (max-height:680px) {
+  .hou-mark { padding-left:40px; }
+  .hou-mark span { display:none; }
+  .hou-mark b { font-size:11px; }
+}
