@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#192b2c">
   <meta name="description" content="沿二十四节气尺，于江汉农家小院观四时物候、传统色彩与圭表日影。">
   <title>一院知时</title>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body data-season="grain">
   <main class="exhibit">
@@ -19,7 +19,6 @@
           <h2 id="ruler-heading">节气尺</h2>
           <span class="ruler-count"><span id="term-number">09</span> / 24</span>
         </div>
-        <p class="ruler-sub">四季四景 · 各择一气入院</p>
         <div class="ruler-window">
           <div class="ruler-cursor" aria-hidden="true"></div>
           <div id="terms" class="terms" style="--ruler-index: 8">
@@ -49,10 +48,6 @@
             <span class="calendar-mark">大寒</span>
           </div>
         </div>
-        <button id="today-jump" class="today-jump" type="button">
-          <span class="today-dot" aria-hidden="true"></span>
-          <span>今日 · <b id="today-name">小雪</b></span>
-        </button>
         <div class="yard-links" role="group" aria-label="四个小院场景">
           <button type="button" data-yard="rain">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-1.4 3.2-6 7.5-6 11.3a6 6 0 0 0 12 0C18 10.5 13.4 6.2 12 3Zm-3 11a3 3 0 0 0 3 3"/></svg>
@@ -73,7 +68,6 @@
         </div>
       </nav>
       <div class="season-note" aria-live="polite" aria-atomic="true">
-        <ul id="hou-lines" class="hou-lines" hidden></ul>
         <p id="term-summary">碧水映天，新栽稻秧成行；竹匾晒新麦，蜻蜓点波。</p>
       </div>
     </aside>
@@ -123,12 +117,19 @@
       <canvas id="yard-compatibility" aria-hidden="true" hidden></canvas>
       <img id="farmer-atlas" alt="" hidden>
       <canvas id="yard" tabindex="0" aria-label="三维农家小院。拖动旋转，滚动缩放，右键拖动平移，键盘方向键旋转。"></canvas>
-      <svg id="yard-hotspots" aria-hidden="true" hidden>
+      <svg id="crop-hotspots" aria-hidden="true" hidden>
+        <g id="crop-outlines"></g>
+      </svg>      <svg id="food-hotspots" aria-hidden="true" hidden>
+        <path id="food-outline-edge"/>
+        <path id="food-outline"/>
+      </svg>      <svg id="yard-hotspots" aria-hidden="true" hidden>
         <polygon id="gnomon-outline-edge"/>
         <polygon id="gnomon-outline"/>
         <path id="gnomon-measure"/>
       </svg>
       <button id="gnomon-target" type="button" aria-label="观察立杆与正午日影" aria-controls="gnomon-inspect" aria-expanded="false" hidden></button>
+      <button id="food-target" type="button" aria-label="看看这张桌上的时令吃食" aria-controls="food-inspect" aria-expanded="false" hidden></button>
+      <button id="crop-target" type="button" aria-label="看看田里的庄稼" aria-controls="crop-inspect" aria-expanded="false" hidden></button>
       <p class="renderer-message" id="renderer-message" hidden>浏览器暂时无法显示三维场景。</p>
     </section>
     <section id="gnomon-inspect" class="gnomon-inspect" aria-labelledby="gnomon-heading" hidden>
@@ -144,21 +145,34 @@
       </p>
       <p id="gnomon-note">同一地点，正午太阳越高，竿影越短。</p>
     </section>
-    <div class="time-strip" role="group" aria-label="时辰">
-      <button type="button" data-hour="6"  data-tone="dawn">卯时</button>
-      <button type="button" data-hour="12" data-tone="day" aria-current="true">午时</button>
-      <button type="button" data-hour="16" data-tone="day">申时</button>
-      <button type="button" data-hour="18" data-tone="dusk">酉时</button>
-      <button type="button" data-hour="0"  data-tone="night">子时</button>
-    </div>
-    <p class="stage-hint" aria-hidden="true">拖拽旋转 · 右键平移 · 滚轮缩放 · 点击立杆测影</p>
+    <section id="crop-inspect" class="gnomon-inspect food-inspect" aria-labelledby="crop-heading" hidden>
+      <header>
+        <h2 id="crop-heading">田里</h2>
+        <button id="crop-return" type="button" aria-label="收起" title="收起">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <p class="food-kicker" id="crop-kicker"></p>
+      <p class="food-name" id="crop-name"></p>
+      <p id="crop-note"></p>
+    </section>    <section id="food-inspect" class="gnomon-inspect food-inspect" aria-labelledby="food-heading" hidden>
+      <header>
+        <h2 id="food-heading">时令吃食</h2>
+        <button id="food-return" type="button" aria-label="收起" title="收起">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <p class="food-kicker" id="food-kicker"></p>
+      <p class="food-name" id="food-name"></p>
+      <p id="food-note"></p>
+    </section>    <p class="stage-hint" aria-hidden="true">拖拽旋转 · 右键平移 · 滚轮缩放 · 点击立杆测影</p>
     <aside class="stage-tools" aria-label="浏览小院">
       <div class="view-controls" aria-label="小院视角">
         <button id="toggle-gnomon" type="button" aria-label="观察立杆测影" aria-pressed="false" title="立杆测影"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v13M4 18h16M9 18h9"/><circle cx="16.5" cy="7.5" r="2.2"/></svg></button>
+        <button id="sound-toggle" type="button" aria-label="背景音乐" aria-pressed="false" title="背景音乐"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h3l4-4v14l-4-4H5z"/><path class="sound-wave" d="M16 8.5a5 5 0 0 1 0 7"/></svg></button>
         <button id="zoom-in" type="button" aria-label="放大" title="放大"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7v14"/></svg></button>
         <button id="reset-view" type="button" aria-label="复位视角" title="复位视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v6h6M4.4 10.2a8 8 0 1 1 1 7.3"/></svg></button>
         <button id="zoom-out" type="button" aria-label="缩小" title="缩小"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-        <button id="sound-toggle" type="button" aria-label="环境音" aria-pressed="false" title="环境音"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h3l4-4v14l-4-4H5z"/><path class="sound-wave" d="M16 8.5a5 5 0 0 1 0 7"/></svg></button>
       </div>
     </aside>
     <aside class="hud-dock" aria-label="界面和节气小志">
@@ -208,16 +222,14 @@
         </section>
         <figure class="sundial" id="sundial">
           <figcaption>田头正午日影</figcaption>
-          <svg class="sun-diagram" viewBox="8 12 60 50" aria-hidden="true">
-            <path class="sq-arc" d="M12 33A14 14 0 0 1 26 19"/>
-            <circle class="sun" cx="26" cy="33" r="2.8"/>
-            <path class="sq-ground" d="M17 56H66"/>
-            <path class="sq-gnomon" d="M26 56V33"/>
-            <rect class="sq-shadow" x="26" y="54.4" height="3.2" rx="1" width="3"/>
-            <path class="sq-ref" d="M30.8 52V60M49 49.5V62M57.5 52V60"/>
+          <svg class="sun-diagram" viewBox="-15 10 95 55" aria-hidden="true">
+            <path d="M-12 62H79" class="dial-axis"/>
+            <rect x="32" y="60" height="2" class="shadow"/>
+            <path d="M32 62V38" class="gnomon"/>
+            <rect y="-.5" height="1" class="sun-ray"/>
+            <circle cx="4" cy="4" r="3.5" class="sun"/>
           </svg>
-          <span id="shadow-ratio" aria-hidden="true"><b>0.14</b><span>× 竿高</span></span>
-          <span class="sundial-extremes">夏至 0.12 · 冬至 1.37</span>
+          <span id="shadow-ratio" aria-hidden="true"></span>
           <small id="shadow-latitude" class="shadow-latitude">北纬 30.4° 示意</small>
         </figure>
       </div>
@@ -248,19 +260,11 @@
       </div>
     </div>
   </main>
-  <script src="assets/farmer-data.js?v=13"></script>
-  <script src="scene.js?v=13"></script>
-  <script src="app.js?v=13"></script>
+  <script src="assets/farmer-data.js"></script>
+  <script src="scene.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
 
 
 
