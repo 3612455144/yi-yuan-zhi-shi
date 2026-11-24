@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   "use strict";
 
   const subtract = (a, b) => a.map((value, i) => value - b[i]);
@@ -131,8 +131,8 @@
   };
 
   const yardTrees = [
-    { x:7.30, z:13.20, scale:1, lean:-1, kind:"willow" },
-    { x:7.28, z:-.94, scale:1.05, lean:1, kind:"broadleaf" },
+    { x:-2.82, z:4.35, scale:.95, lean:-1, kind:"willow" },
+    { x:7.32, z:4.10, scale:1.05, lean:1, kind:"broadleaf" },
     { x:7.27, z:8.02, scale:.61, lean:1, kind:"willow" }
   ];
   const treeLeaves = {
@@ -211,6 +211,7 @@
           tip[2]+Math.sin(angle)*radius];
         const bulk = size*scale*spread*(j===0 ? 1 : .45+.25*variation(j*13+i));
         mesh.canopy(...at(tuft),bulk,palette[(i+j)%palette.length],willow ? .81 : 1.02);
+        treeSpots.push([at(tuft)[0], at(tuft)[1], at(tuft)[2], bulk]);
         if (willow && j%2===0) {
           const droop = [tuft[0]+.14,tuft[1]-.68,tuft[2]+.1];
           mesh.beam(at(tuft),at(droop),.018*scale,.018*scale,palette[1]);
@@ -488,6 +489,25 @@
     mesh.face([stem,[center[0],center[1],center[2]+width],tip,[center[0],center[1],center[2]-width]],tone);
   }
 
+  // 记录本季画出来的每一株作物，描边时只用这些点求凸包
+  let cropSpots = [];
+  let treeSpots = [];
+
+  // 每季只框一小块：夏秋是田角的一畦秧稻，冬天是那块还绿着的菜畦
+  const CROP_FOCUS = {
+    rain:   {x: 7.32, z: 4.10, y: 4.05, zoom: 3.0},
+    grain:  {x: -.04, z: 4.36, y: .82, zoom: 2.7},
+    dew:    {x: -.04, z: 4.36, y: .95, zoom: 2.7},
+    winter: {x: -2.24, z: 10.30, y: .60, zoom: 2.7}
+  };
+
+  const CROP_BOX = {
+    rain:   {left:-1.54, right:1.46, near:2.86, far:5.86, y:.31},
+    grain:  {left:-1.54, right:1.46, near:2.86, far:5.86, y:.31},
+    dew:    {left:-1.54, right:1.46, near:2.86, far:5.86, y:.31},
+    winter: {left:-2.62, right:-1.86, near:8.10, far:12.48, y:.31}
+  };
+
   function field(mesh, term, state) {
     const {left,right,near,far} = plot;
     const x = (left+right)/2, z = (near+far)/2, width = right-left, depth = far-near;
@@ -552,6 +572,7 @@
           blade(mesh,stemX+b*.026,pz+(b%2)*.077,length,b*height*.20,tones[(b+seed+8)%3]);
         }
         if (tall && i%3!==1) mesh.beam([stemX,.71,pz],[stemX+.18,.94,pz+.05],.044,.036,"fae074");
+        cropSpots.push([stemX, pz, height]);
         if (wet && (row+i)%3===0) {
           mesh.box(stemX+.24,.263,pz+.22,.28+variation(seed)*.26,.004,.028,"a99a7c");
         }
@@ -639,189 +660,96 @@
   }
 
   const sunHeading = [-.8,-.6];
-
-  // 一天里太阳的高度与影向：6 点日出、12 点最高、18 点日落
-  function sunState(hour) {
-    const t = Math.max(0, Math.min(1, (hour - 6) / 12));
-    const altitude = Math.sin(Math.PI * t) * 1.18;
-    const ratio = Math.min(3.2, 1 / Math.max(.30, Math.tan(altitude)));
-    const angle = Math.atan2(.60, .80) + (t - .5) * 1.7;
-    return { ratio, dir: [-Math.cos(angle), -Math.sin(angle)] };
-  }
   const shadeOpacity = {rain:.52,grain:.80,dew:.84,winter:.62};
   const hazeColor = {rain:"a4d4c6",grain:"b6e0cc",dew:"cfbda8",winter:"b8cee0"};
-  // 立杆置于原先大树的位置；圭面必须沿日影方向 (0.8,0.6) 铺开，影子才会落在刻度上
   const gnomon = {x:-2.45,z:1.02,base:.345,height:1.02,radius:.062};
 
   function sundialStand(mesh) {
     const {x,z,base,height}=gnomon;
     const point=(along,across,y)=>[x+along*.8-across*.6,y,z+along*.6+across*.8];
+    // 圭长随杆高走：最长影子落在刻度内，石板才不用变更长度
+    const L=height*1.6;
     const slab=(start,end,width,y,tone)=>{
       mesh.face([point(start,-width,y),point(start,width,y),point(end,width,y),point(end,-width,y)],tone);
     };
-    const L=height*1.6;
-    slab(-.20,L,.30,base-.011,"6f6450");
-    slab(-.17,L-.03,.262,base,"9d8e73");
-    for (const side of [-.30,.30]) {
+    slab(-.20,L,.25,base-.011,"988a71");
+    slab(-.17,L-.03,.214,base,"d9c9a9");
+    for (const side of [-.25,.25]) {
       mesh.face([point(-.20,side,.275),point(L,side,.275),
         point(L,side,base-.011),point(-.20,side,base-.011)],"91826c");
     }
-    slab(.13,L-.13,.012,base+.003,"7b6c52");
+    slab(.13,L-.13,.012,base+.003,"a89574");
     for (let i=1;i<=6;i++) {
       const place=i*height/4;
       slab(place-.013,place+.013,i%4===0 ? .18 : .102,base+.004,
-        i%4===0 ? "5f5238" : "8b7a5c");
+        i%4===0 ? "78674c" : "b3a07f");
     }
     mesh.box(x,base+.019,z,.19,.038,.19,"a89b81","88785d");
     mesh.beam([x,base+.038,z],[x,base+height,z],gnomon.radius*2,gnomon.radius*2,"80613f");
   }
-  // —— 三候小品：每院三件，对应初候/二候/三候。尺寸偏“绘本比例”，比真实略大以便看清 ——
-  const HOU_GROUND = .24;
 
-  function houBird(mesh, x, y, z, s, body, wing, dip) {
-    const d = dip ? -.05 * s : 0;
-    mesh.box(x, y, z, .16 * s, .09 * s, .26 * s, body, body);
-    mesh.box(x, y + .08 * s + d, z + .15 * s, .09 * s, .09 * s, .10 * s, body, body);
-    mesh.face([[x, y, z - .10 * s], [x - .34 * s, y + .06 * s, z + .04 * s], [x - .34 * s, y - .01 * s, z + .12 * s]], wing);
-    mesh.face([[x, y, z - .10 * s], [x + .34 * s, y - .01 * s, z + .12 * s], [x + .34 * s, y + .06 * s, z + .04 * s]], wing);
-    mesh.box(x, y - .01 * s, z - .18 * s, .05 * s, .04 * s, .16 * s, wing, wing);
+  // —— 门口那张食桌：桌面一张、四条腿，四季换一样吃食 ——
+  const foodTableAt = { x: 4.72, z: 1.86, height: .44, top: 1.24, deep: .84 };
+  const FOOD_GROUND = .345;   // 檐前铺地石的高度
+  const FOOD_TOP = FOOD_GROUND + foodTableAt.height + .045;
+
+  function foodBall(mesh, x, y, z, r, color) {
+    mesh.revolved(x, z, [[y - r, 0], [y - r * .5, r * .86], [y + r * .28, r * .74], [y + r, 0]], [color], 9);
   }
 
-  // 每个候一个小品；用代理 mesh 先画一圈浅色描边，再画本体
-  function houOutline(mesh) {
-    const rim = "fbf6e8";
-    // 描边壳整体沿视线反方向后退一点，否则白色的前表面会盖住本体
-    const back = [.030, .042, -.050];
-    const shift = point => [point[0] + back[0], point[1] + back[1], point[2] + back[2]];
-    return {
-      box: (x, y, z, w, h, d) =>
-        mesh.box(x + back[0], y + back[1], z + back[2], w + .03, h + .03, d + .03, rim, rim),
-      beam: (a, b, w, d) => mesh.beam(shift(a), shift(b), w + .03, d + .03, rim),
-      revolved: (x, z, rings) =>
-        mesh.revolved(x + back[0], z + back[2], rings.map(([y, r]) => [y + back[1], r + .03]), [rim], 9),
-      face: vertices => {
-        const n = vertices.length;
-        const c = [0, 1, 2].map(k => vertices.reduce((sum, v) => sum + v[k], 0) / n);
-        mesh.face(vertices.map(v => v.map((value, k) => c[k] + (value - c[k]) * 1.18 + back[k])), rim);
-      }
-    };
+  function foodPlate(mesh, x, y, z, r, color, rim) {
+    mesh.revolved(x, z, [[y, r], [y + .018, r * .92], [y + .045, r * .74]], [color], 12);
+    mesh.revolved(x, z, [[y + .045, r * .74], [y + .052, r * .60]], [rim], 12);
   }
 
-  // 选中的那一候脚下给一块暖色光斑，代替无法实现的描边
-  function houSpot(mesh, x, z, radius) {
-    const y = HOU_GROUND + .012, sides = 14;
-    const ring = (r, color) => mesh.face(Array.from({ length: sides }, (_, i) => {
-      const angle = i * 2 * Math.PI / sides;
-      return [x + r * Math.cos(angle), y, z + r * Math.sin(angle)];
-    }), color);
-    ring(radius, "fff0c8");
-    ring(radius * 1.22, "ffe3a6");
-  }
-
-  // 每候光斑的位置（天上的候不落光斑）
-  const HOU_SPOTS = {
-    rain:   [[-2.22, 9.02, .58], null, [-2.50, 2.10, .50]],
-    grain:  [[-2.62, 4.52, .52], null, [ 1.66, 14.96, .46]],
-    dew:    [null, [ 6.55, 12.40, .52], [ .60, -.40, .46]],
-    winter: [null, null, [ 2.00, 14.60, .72]]
-  };
-
-  const HOU_BUILDERS = {
-    rain: [
-      mesh => {
-        const g = HOU_GROUND;
-        mesh.beam([-2.42, g + .12, 8.80], [-2.02, g + .28, 8.96], .34, .28, "5a3d28");
-        mesh.box(-1.94, g + .30, 8.98, .24, .22, .24, "5a3d28", "4a3220");
-        mesh.beam([-2.04, g + .24, 8.94], [-2.54, g + .06, 9.14], .13, .10, "4a3220");
-        mesh.beam([-2.22, g + .04, 9.26], [-1.90, g + .08, 9.34], .17, .12, "cfd8d8");
-        mesh.face([[-2.30, g + .06, 9.22], [-2.14, g + .10, 9.30], [-2.18, g + .03, 9.38]], "9fb0b4");
-      },
-      mesh => {
-        houBird(mesh, 2.40, 5.40, -3.30, 2.6, "f2eee2", "57544c", false);
-        houBird(mesh, 1.66, 4.96, -3.70, 2.0, "f2eee2", "57544c", false);
-      },
-      mesh => {
-        const g = HOU_GROUND;
-        for (let i = 0; i < 7; i++) {
-          const bx = -2.66 + i * .13, bz = 1.96 + (i % 3) * .14;
-          mesh.beam([bx, g + .01, bz], [bx + .04, g + .44 + (i % 2) * .14, bz + .03], .042, .042,
-            i % 2 ? "8cc46a" : "5f9c46");
-        }
+  function foodTable(mesh, term) {
+    const {x, z, height, top, deep} = foodTableAt;
+    const g = FOOD_GROUND;
+    mesh.box(x, g + height, z, top, .07, deep, "b08249", "8e6636");
+    mesh.box(x, g + height - .05, z, top - .06, .03, deep - .06, "8e6636", "7a5730");
+    for (const [dx, dz] of [[-.38,-.23],[.38,-.23],[-.38,.23],[.38,.23]]) {
+      mesh.box(x + dx, g + height / 2, z + dz, .075, height, .075, "7d5730", "6b4a28");
+    }
+    const y = FOOD_TOP;
+    if (term === "rain") {
+      // 青团
+      foodPlate(mesh, x, y, z, .40, "e7dcc4", "cbbfa5");
+      foodBall(mesh, x - .15, y + .13, z + .03, .125, "7f9c52");
+      foodBall(mesh, x + .12, y + .13, z - .04, .125, "73924a");
+      foodBall(mesh, x + .01, y + .13, z + .16, .115, "8aaa5d");
+    } else if (term === "grain") {
+      // 粽子：四角锥两只，外加一道麻绳
+      const cone = (cx, cz, rot, color) => {
+        const h = .21, r = .135;
+        const a = [cx + Math.cos(rot) * r, y, cz + Math.sin(rot) * r];
+        const b = [cx + Math.cos(rot + 2.1) * r, y, cz + Math.sin(rot + 2.1) * r];
+        const c = [cx + Math.cos(rot + 4.2) * r, y, cz + Math.sin(rot + 4.2) * r];
+        const d = [cx, y + h, cz];
+        mesh.face([a, b, d], color);
+        mesh.face([b, c, d], color);
+        mesh.face([c, a, d], color);
+        mesh.face([a, c, b], color);
+      };
+      foodPlate(mesh, x, y, z, .38, "e7dcc4", "cbbfa5");
+      cone(x - .13, z + .03, .4, "5f7f42");
+      cone(x + .14, z - .05, 2.2, "6d8c4a");
+      mesh.beam([x - .22, y + .14, z + .03], [x - .04, y + .17, z + .03], .014, .014, "d8c9a8");
+    } else if (term === "dew") {
+      // 柿子
+      foodPlate(mesh, x, y, z, .40, "e7dcc4", "cbbfa5");
+      foodBall(mesh, x - .14, y + .13, z + .05, .125, "cf6f38");
+      foodBall(mesh, x + .14, y + .13, z + .01, .125, "c26230");
+      foodBall(mesh, x + .00, y + .13, z + .19, .115, "d87b41");
+      for (const [dx, dz] of [[-.14,.05],[.14,.01],[0,.19]]) {
+        mesh.box(x + dx, y + .255, z + dz, .07, .03, .07, "6f7f4a", "5d6b3d");
       }
-    ],
-    grain: [
-      mesh => {
-        const g = HOU_GROUND, mx = -2.62, mz = 4.52, my = g + .04;
-        mesh.beam([mx, my + .12, mz - .30], [mx, my + .22, mz + .30], .15, .13, "6f8f45");
-        mesh.box(mx, my + .30, mz + .40, .19, .19, .20, "6f8f45", "4e6a30");
-        mesh.beam([mx + .07, my + .14, mz + .30], [mx + .34, my + .52, mz + .46], .05, .05, "4e6a30");
-        mesh.beam([mx - .07, my + .14, mz + .30], [mx - .34, my + .52, mz + .46], .05, .05, "4e6a30");
-        for (let i = 0; i < 3; i++) {
-          const fz = mz - .12 + i * .20;
-          mesh.beam([mx, my + .12, fz], [mx - .30, my + .005, fz + .08], .036, .036, "4e6a30");
-          mesh.beam([mx, my + .12, fz], [mx + .30, my + .005, fz + .08], .036, .036, "4e6a30");
-        }
-      },
-      mesh => {
-        houBird(mesh, 7.66, 3.02, -1.62, 2.0, "d8cdb6", "3f3a34", false);
-      },
-      mesh => {
-        const g = HOU_GROUND;
-        houBird(mesh, 1.66, g + 1.02, 15.12, 2.1, "a8997f", "3f3a34", true);
+    } else {
+      // 糍粑：三块煎得两面焦黄的糯米糕
+      foodPlate(mesh, x, y, z, .40, "e7dcc4", "cbbfa5");
+      for (const [dx, dz, rot] of [[-.15,.03,.2],[.14,-.04,-.3],[.00,.18,.8]]) {
+        mesh.box(x + dx, y + .06, z + dz, .24, .10, .17, "f4ecd8", "d9b478");
       }
-    ],
-    dew: [
-      mesh => {
-        houBird(mesh, 3.96, 5.30, -3.30, 2.4, "f2eee2", "57544c", false);
-        houBird(mesh, 3.30, 4.92, -3.66, 2.0, "f2eee2", "57544c", false);
-        houBird(mesh, 4.62, 4.90, -3.62, 1.9, "f2eee2", "57544c", false);
-      },
-      mesh => {
-        const g = HOU_GROUND;
-        for (const [cx, cz, s] of [[6.38, 12.26, 1], [6.72, 12.58, .8]]) {
-          mesh.revolved(cx, cz, [[g + .01, .30 * s], [g + .16, .36 * s], [g + .24, .18 * s]],
-            ["efe6d4", "cfc2a6"], 9);
-        }
-      },
-      mesh => {
-        chrysanthemum(mesh, .60, HOU_GROUND, -.40, 2.0, 41);
-      }
-    ],
-    winter: [
-      mesh => {
-        for (let i = 0; i < 6; i++) {
-          const a0 = .45 + i * .22, a1 = a0 + .24, r = 3.6;
-          const p = a => [Math.cos(a) * r, 5.4 + Math.sin(a) * r * .5, -3.2];
-          mesh.beam(p(a0), p(a1), .17, .17, i % 2 ? "b9c9d6" : "cddae4");
-        }
-      },
-      mesh => {
-        for (let i = 0; i < 3; i++) {
-          const sx = 3.62 + i * .40;
-          mesh.beam([sx, 3.55, -2.30], [sx + .10, 5.00 + i * .14, -2.30], .11, .11,
-            i % 2 ? "ccc4b2" : "b6ad99");
-        }
-      },
-      mesh => {
-        const g = HOU_GROUND;
-        mesh.box(2.00, g + .46, 14.94, 1.16, .92, .09, "7a5a3c", "6a4d32");
-        mesh.box(2.00, g + .46, 15.00, .09, .92, .05, "5e452d", "5e452d");
-        mesh.box(1.60, g + .46, 15.00, .06, .88, .06, "5e452d", "5e452d");
-        mesh.box(2.40, g + .46, 15.00, .06, .88, .06, "5e452d", "5e452d");
-      }
-    ]
-  };
-
-  function houProps(mesh, term, ranges) {
-    const builders = HOU_BUILDERS[term] || [];
-    const spots = HOU_SPOTS[term] || [];
-    builders.forEach((build, index) => {
-      const start = mesh.data.length / 9;
-      const spot = spots[index];
-      if (spot) houSpot(mesh, spot[0], spot[1], spot[2]);
-      build(mesh);
-      if (ranges) ranges.push([start, mesh.data.length / 9]);
-    });
+    }
   }
 
   function chrysanthemum(mesh, x, base, z, scale, seed) {
@@ -902,6 +830,7 @@
     mesh.box(-2.24,.268,10.29,.73,.058,4.29,"7d6d5c","6b5c4c");
     for (let i=0;i<16;i++) {
       const x=-2.40+(i%2)*.34, z=8.54+Math.floor(i/2)*.50;
+      cropSpots.push([x, z, .16]);
       for (let j=0;j<5;j++) {
         const angle=j*2.4+i;
         leaf(mesh,x+Math.cos(angle)*.10,.336,z+Math.sin(angle)*.10,.12,angle,.48,mildGreen[j%4]);
@@ -1313,10 +1242,7 @@
   function viewMatrix(yaw,pitch,width,height,zoom,panX,panZ,pivotY) {
     const forward=[Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)];
     const right=unit(cross([0,1,0],forward)), up=cross(forward,right);
-    // 竖屏（或窄窗口）画面横向变窄，需要整体后退才能装下整个院子。
-    const aspect=width/height;
-    const narrowFit=aspect<1.35 ? homeView.verticalSpan*(1.35/aspect)*.92 : 0;
-    const span=Math.max(homeView.verticalSpan,narrowFit,orbitDiameter*height/(width*1.86))/zoom;
+    const span=Math.max(homeView.verticalSpan,orbitDiameter*height/(width*1.86))/zoom;
     const sx=height/(span*width), sy=1/span;
     const [x,,z]=homeView.pivot;
     const target=[x+panX,pivotY,z+panZ];
@@ -1347,10 +1273,12 @@
     return [...rim(sorted),...rim(sorted.reverse())];
   }
 
-  function poleOccluded(vertices,forward) {
-    const origin=[gnomon.x,gnomon.base+gnomon.height*.66,gnomon.z];
+  // skip: [startVertex,endVertex) —— 物体自己的三角面要跳过，否则会被自己挡住
+  function rayBlocked(vertices,forward,origin,skip) {
     const [x,y,z]=origin;
+    const skipFrom=skip?skip[0]*9:-1, skipTo=skip?skip[1]*9:-1;
     for (let i=0;i<vertices.length;i+=27) {
+      if (i>=skipFrom && i<skipTo) continue;
       // The camera stays above the yard. Only test geometry in front of the pole.
       if (Math.max(vertices[i+1],vertices[i+10],vertices[i+19])<y) continue;
       if (forward[0]*(vertices[i]-x)<0 && forward[0]*(vertices[i+9]-x)<0 && forward[0]*(vertices[i+18]-x)<0) continue;
@@ -1367,6 +1295,10 @@
       if (v>=0 && u+v<=1 && dot(e2,q)/det>.13) return true;
     }
     return false;
+  }
+
+  function poleOccluded(vertices,forward) {
+    return rayBlocked(vertices,forward,[gnomon.x,gnomon.base+gnomon.height*.66,gnomon.z]);
   }
 
   const lightGrid = {size:512,left:-7,back:-7,width:25,depth:32};
@@ -1405,9 +1337,8 @@
     }
   }
 
-  function lightMap(world, shadowRatio, term, heading) {
-    const axis = heading || sunHeading;
-    const shearX=axis[0]*shadowRatio, shearZ=axis[1]*shadowRatio;
+  function lightMap(world, shadowRatio, term) {
+    const shearX=sunHeading[0]*shadowRatio, shearZ=sunHeading[1]*shadowRatio;
     const {size}=lightGrid;
     const pixels=new Uint8Array(size*size*4);
     rasterLight(world,pixels,0,shearX,shearZ);
@@ -1643,11 +1574,9 @@
       }
       this.pixels.set(this.worldPixels);
       this.depth.set(this.worldDepth);
-      if (!this.indoor) {
-        if (farmer) this.draw(farmer.shadow.data,matrix,warmth,light,"farmer-shadow",farmer.texture);
-        this.draw(actor,matrix,warmth,light,water.length ? "actor" : "solid");
-        if (farmer) this.draw(farmer.sprite.data,matrix,warmth,light,"farmer",farmer.texture);
-      }
+      if (farmer) this.draw(farmer.shadow.data,matrix,warmth,light,"farmer-shadow",farmer.texture);
+      this.draw(actor,matrix,warmth,light,water.length ? "actor" : "solid");
+      if (farmer) this.draw(farmer.sprite.data,matrix,warmth,light,"farmer",farmer.texture);
       this.context.putImageData(this.frame,0,0);
     }
 
@@ -1974,6 +1903,161 @@
       this.cameraMode = "glide";
       this.wakeCamera();
     }
+    // 多数采样点被挡住时，整条描边就别画了
+    mostlyHidden(points, skip) {
+      if (!this.landData || !this.cameraMatrix) return false;
+      let hidden = 0;
+      for (const [x, y, z] of points) {
+        if (this.isHidden(x, y, z, skip)) hidden++;
+      }
+      return hidden * 2 >= points.length;
+    }
+
+    // 这个点是否被别的几何挡住（SVG 描边没有深度测试，只能自己判）
+    isHidden(x, y, z, skip) {
+      const m = this.cameraMatrix;
+      if (!m || !this.landData) return false;
+      return rayBlocked(this.landData, [-45 * m[2], -45 * m[6], -45 * m[10]], [x, y, z], skip);
+    }
+
+    // 把某段几何的三角面投影成屏幕坐标：每 6 个数是一个三角形
+    outlineTriangles(range) {
+      const m = this.cameraMatrix;
+      if (!m || !this.viewWidth || !range) return null;
+      const data = this.landData;
+      if (!data) return null;
+      const flat = [];
+      for (let v = range[0]; v < range[1]; v++) {
+        const o = v * 9;
+        const x = data[o], y = data[o + 1], z = data[o + 2];
+        flat.push((x * m[0] + y * m[4] + z * m[8] + m[12] + 1) * this.viewWidth / 2,
+                  (1 - x * m[1] - y * m[5] - z * m[9] - m[13]) * this.viewHeight / 2);
+      }
+      return flat.length >= 6 ? flat : null;
+    }
+    foodSilhouette() { return this.outlineTriangles(this.foodRange); }
+    treeSilhouette() { return this.outlineTriangles(this.treeRange); }
+
+    cropProjection() {
+      const m = this.cameraMatrix;
+      if (!m || !this.viewWidth) return null;
+      const project = (px, py, pz) => [
+        (px*m[0] + py*m[4] + pz*m[8] + m[12] + 1) * this.viewWidth / 2,
+        (1 - px*m[1] - py*m[5] - pz*m[9] - m[13]) * this.viewHeight / 2
+      ];
+      const items = [];
+      if (this.term === "rain") {
+        // 杏花：整棵树一圈，点取在各团树冠的圆周上
+        // 杏花：树冠各团 + 树干，一起求凸包，整棵树描一圈
+        const ring = [];
+        for (const [sx, sy, sz, bulk] of treeSpots) {
+          if (Math.hypot(sx - 7.32, sz - 4.10) > 2.4) continue;
+          for (let a = 0; a < 10; a++) {
+            const angle = a * Math.PI / 5;
+            const ca = Math.cos(angle), sa = Math.sin(angle) * .84;
+            ring.push(project(sx + ca * bulk, sy, sz + sa * bulk));
+            ring.push(project(sx + ca * bulk * .72, sy + bulk * .58, sz + sa * bulk * .72));
+            ring.push(project(sx + ca * bulk * .72, sy - bulk * .58, sz + sa * bulk * .72));
+          }
+        }
+        for (const [dx, dz] of [[-.16, -.12], [.16, -.12], [-.16, .12], [.16, .12]]) {
+          ring.push(project(7.32 + dx, .34, 4.10 + dz));
+          ring.push(project(7.32 + dx * .6, 3.10, 4.10 + dz * .6));
+        }
+        const probes = [[7.32, 4.6, 4.10], [6.5, 4.2, 4.10], [8.2, 4.2, 4.10],
+                        [7.32, 3.2, 3.4], [7.32, 3.2, 4.8], [7.32, 1.6, 4.10], [7.32, .6, 4.10]];
+        if (this.mostlyHidden(probes, this.treeRange)) return null;
+        if (ring.length) items.push(outlineHull(ring));
+      } else {
+        // 作物：一株一个椭圆
+        const box = CROP_BOX[this.term] || CROP_BOX.grain;
+        for (const [px, pz, height] of cropSpots) {
+          if (px < box.left - .2 || px > box.right + .2) continue;
+          if (pz < box.near - .2 || pz > box.far + .2) continue;
+          if (this.isHidden(px, .30 + height + .06, pz)) continue;
+          const base = project(px, .30, pz);
+          const side = project(px + .14, .30, pz + .07);
+          const top = project(px, .30 + height * 1.04, pz);
+          const radius = Math.hypot(side[0] - base[0], side[1] - base[1]);
+          const centreY = (base[1] + top[1]) / 2;
+          const radiusY = Math.max(radius, Math.abs(top[1] - base[1]) * .58);
+          items.push({ ellipse: [base[0], centreY, radius, radiusY] });
+        }
+      }
+      if (!items.length) return null;
+      const all = [];
+      for (const item of items) {
+        if (item.ellipse) {
+          const [cx, cy, rx, ry] = item.ellipse;
+          all.push([cx - rx, cy - ry], [cx + rx, cy + ry]);
+        } else {
+          all.push(...item);
+        }
+      }
+      return { items, all };
+    }
+    focusCrop() {
+      if (this.cropView) return;
+      const base = this.targetView || this.currentView();
+      this.cropView = {...base};
+      const focus = CROP_FOCUS[this.term] || CROP_FOCUS.grain;
+      this.moveView({
+        yaw: this.yaw + shortestAngleDelta(this.yaw, base.yaw),
+        pitch: around(.40,.60,base.pitch),
+        zoom: focus.zoom,
+        panX: focus.x - homeView.pivot[0],
+        panZ: focus.z - homeView.pivot[2],
+        pivotY: focus.y
+      });
+    }
+    releaseCrop() {
+      if (!this.cropView) return;
+      const target = this.cropView;
+      this.cropView = null;
+      this.moveView({...target, yaw: this.yaw + shortestAngleDelta(this.yaw, target.yaw)});
+    }
+    foodProjection() {
+      const m = this.cameraMatrix;
+      if (!m || !this.viewWidth) return null;
+      const project = (px, py, pz) => [
+        (px*m[0] + py*m[4] + pz*m[8] + m[12] + 1) * this.viewWidth / 2,
+        (1 - px*m[1] - py*m[5] - pz*m[9] - m[13]) * this.viewHeight / 2
+      ];
+      const {x, z, height, top, deep} = foodTableAt;
+      const g = FOOD_GROUND;
+      const points = [];
+      for (const dx of [-top / 2, top / 2]) {
+        for (const dz of [-deep / 2, deep / 2]) {
+          points.push(project(x + dx, g + height, z + dz), project(x + dx, g + height + .07, z + dz));
+        }
+      }
+      for (const [dx, dz] of [[-.38, -.23], [.38, -.23], [-.38, .23], [.38, .23]]) {
+        points.push(project(x + dx - .04, g, z + dz - .04), project(x + dx + .04, g, z + dz + .04));
+      }
+      if (this.isHidden(x, g + height, z, this.foodRange)) return null;
+      if (points.every(([px]) => px < 0) || points.every(([px]) => px > this.viewWidth) ||
+          points.every(([, py]) => py < 0) || points.every(([, py]) => py > this.viewHeight)) return null;
+      return { outline: outlineHull(points) };
+    }
+    focusFood() {
+      if (this.foodView) return;
+      const base = this.targetView || this.currentView();
+      this.foodView = {...base};
+      this.moveView({
+        yaw: this.yaw + shortestAngleDelta(this.yaw, base.yaw),
+        pitch: around(.52,.76,base.pitch),
+        zoom: 4.6,
+        panX: foodTableAt.x - homeView.pivot[0],
+        panZ: foodTableAt.z - homeView.pivot[2],
+        pivotY: FOOD_GROUND + foodTableAt.height * .9
+      });
+    }
+    releaseFood() {
+      if (!this.foodView) return;
+      const target = this.foodView;
+      this.foodView = null;
+      this.moveView({...target, yaw: this.yaw + shortestAngleDelta(this.yaw, target.yaw)});
+    }
     focusGnomon() {
       if (this.gnomonView) return;
       const base = this.targetView || this.currentView();
@@ -2199,62 +2283,34 @@
         this.lastCameraTime = undefined;
       }
     }
-    // 时辰：重烘光影、点灯或熄灯、农夫回屋
-    setHour(hour) {
-      this.hour = hour;
-      const night = hour >= 17 || hour < 6;
-      const deepNight = hour < 5 || hour >= 23;
-      this.indoor = night;
-      this.lampScale = night ? (deepNight ? 0 : 2.6) : 1;
-      const sun = sunState(hour);
-      this.shadows = lightMap(this.landData, sun.ratio, this.term, sun.dir);
-      this.lampPower = new Float32Array(this.shadows.practicalPower);
-      this.uploadShadows();
-      this.render();
-      if (this.motion) this.queueFrame();
-    }
-
-    // 只显示被选中的那一候的小品：其余顶点的位置挪到画外，切回来再写回原值
-    setHou(index) {
-      this.houIndex = index;
-      if (!this.houRanges || !this.houOriginal) return;
-      const data = this.world.data;
-      this.houRanges.forEach(([start], i) => {
-        const source = this.houOriginal[i];
-        const base = start * 9;
-        if (i === index) {
-          data.set(source, base);
-        } else {
-          for (let k = 0; k < source.length; k += 9) {
-            data[base + k] = 0;
-            data[base + k + 1] = -9999;
-            data[base + k + 2] = 0;
-          }
-        }
-      });
-      this.uploadGpuBuffer(this.world, false);
-      this.render();
-      if (this.motion) this.queueFrame();
-    }
-
     useTerm(term, shadowLength) {
       this.term = term;
       this.farmerStart = undefined;
       this.state = seasonColors[term];
       const mesh = new Mesh();
+      cropSpots = [];
+      treeSpots = [];
       platform(mesh,this.state);
       field(mesh,term,this.state);
       farmhouse(mesh,this.state,term);
       plantsAndTools(mesh,term,this.state);
       sundialStand(mesh);
+    const foodStart = mesh.data.length / 9;
+    foodTable(mesh,term);
+    this.foodRange = [foodStart, mesh.data.length / 9];
       porchSupplies(mesh,term);
       waterWell(mesh);
       bambooFence(mesh,-1.62,2.01,15.20);
       bambooFence(mesh,2.83,6.52,15.20);
-      for (const tree of yardTrees) growTree(mesh,tree,term);
+      for (const tree of yardTrees) {
+        const start = mesh.data.length / 9;
+        growTree(mesh,tree,term);
+        if (Math.hypot(tree.x - 7.32, tree.z - 4.10) < .4) {
+          this.treeRange = [start, mesh.data.length / 9];
+        }
+      }
       seasonalDetails(mesh,term);
-      const houRanges = [];
-      houProps(mesh,term,houRanges);
+      if (term==="winter") fireBed(mesh);
       this.landCount=mesh.data.length/9;
       if (term==="grain") {
         const {left,right,near,far}=plot, y=shallowWater.height;
@@ -2264,11 +2320,7 @@
       this.upload(this.world,mesh,false);
       this.landData=this.world.data.subarray(0,this.landCount*9);
       this.waterData=this.world.data.subarray(this.landCount*9);
-      this.houRanges = houRanges;
-      this.houOriginal = houRanges.map(([a,b]) => new Float32Array(this.landData.subarray(a*9,b*9)));
-      this.houIndex = -1;
-      const sun=sunState(this.hour===undefined?12:this.hour);
-      this.shadows=lightMap(this.landData,sun.ratio,term,sun.dir);
+      this.shadows=lightMap(this.landData,shadowLength,term);
       this.lampPower=new Float32Array(this.shadows.practicalPower);
       this.uploadShadows();
       this.act(0,0);
@@ -2290,9 +2342,8 @@
       mesh.data.length = 0;
       this.farmer = farmerPose(this.term,farmerTime);
       const basePower = this.shadows.practicalPower;
-      const glow = this.lampScale || 1;
-      this.lampPower[0] = basePower[0] * glow * (1 + .05 * Math.sin(time * 3.1));
-      this.lampPower[1] = basePower[1] * glow * (1 + .05 * Math.sin(time * 2.7 + 1.4));
+      this.lampPower[0] = basePower[0] * (1 + .05 * Math.sin(time * 3.1));
+      this.lampPower[1] = basePower[1] * (1 + .05 * Math.sin(time * 2.7 + 1.4));
       if (this.term==="dew") farmerLeafSweep(mesh,this.farmer,farmerTime);
       chickens(mesh,this.term,time);
       if (this.term === "rain") {
@@ -2431,17 +2482,8 @@
       this.positionFarmer();
       return true;
     }
-    // 把任意世界坐标投到画布像素坐标：用于把 DOM 热点贴到场景里的物件上
-    projectPoint(x, y, z) {
-      const m = this.cameraMatrix;
-      if (!m || !this.viewWidth) return null;
-      return {
-        x: (x*m[0] + y*m[4] + z*m[8] + m[12] + 1) * this.viewWidth / 2,
-        y: (1 - x*m[1] - y*m[5] - z*m[9] - m[13]) * this.viewHeight / 2
-      };
-    }
-
-    gnomonProjection() {      const m=this.cameraMatrix;
+    gnomonProjection() {
+      const m=this.cameraMatrix;
       const {x,z,base,height,radius}=gnomon;
       const project=(px,py,pz)=>[
         (px*m[0]+py*m[4]+pz*m[8]+m[12]+1)*this.viewWidth/2,
@@ -2462,6 +2504,15 @@
         shadow:[project(x,base+.01,z),project(x-shearX*height,base+.01,z-shearZ*height)]
       };
     }
+    // 把任意世界坐标投到画布像素坐标：给 DOM 热点贴到场景里的物件用
+    projectPoint(px, py, pz) {
+      const m = this.cameraMatrix;
+      if (!m || !this.viewWidth) return null;
+      return {
+        x: (px*m[0] + py*m[4] + pz*m[8] + m[12] + 1) * this.viewWidth / 2,
+        y: (1 - px*m[1] - py*m[5] - pz*m[9] - m[13]) * this.viewHeight / 2
+      };
+    }
     render() {
       if (!this.state) return;
       const canvas = this.canvas;
@@ -2477,6 +2528,14 @@
       }
       const matrix=this.cameraMatrix;
       if (changedView && this.onView) this.onView();
+      if (this.onCropView && (changedView || this.cropGeometry!==this.landData)) {
+        this.cropGeometry=this.landData;
+        this.onCropView(this.cropProjection());
+      }
+      if (this.onFoodView && (changedView || this.foodGeometry!==this.landData)) {
+        this.foodGeometry=this.landData;
+        this.onFoodView(this.foodProjection());
+      }
       if (this.onGnomonView && (changedView || this.gnomonGeometry!==this.landData)) {
         this.gnomonGeometry=this.landData;
         this.onGnomonView(this.gnomonProjection());
@@ -2530,8 +2589,8 @@
         gl.depthMask(true);
         gl.disable(gl.BLEND);
       }
-      if (!this.indoor) this.draw(this.actor);
-      if (farmerReady && !this.indoor) {
+      this.draw(this.actor);
+      if (farmerReady) {
         this.uploadGpuBuffer(this.farmerSprite,true);
         gl.enable(gl.BLEND);
         gl.uniform1f(this.farmerPass,1);
@@ -2569,16 +2628,6 @@
   }
   window.YardScene = YardScene;
 })();
-
-
-
-
-
-
-
-
-
-
 
 
 
